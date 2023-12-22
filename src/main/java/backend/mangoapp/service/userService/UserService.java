@@ -6,6 +6,7 @@ import backend.mangoapp.service.Service;
 import lombok.AllArgsConstructor;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @org.springframework.stereotype.Service
@@ -14,8 +15,8 @@ public class UserService implements Service<User> {
     private final UserRepository userRepository;
 
     @Override
-    public User getById(long id) {
-        return userRepository.getById(id);
+    public Optional<User> getById(long id) {
+        return userRepository.findById(id);
     }
 
     @Override
