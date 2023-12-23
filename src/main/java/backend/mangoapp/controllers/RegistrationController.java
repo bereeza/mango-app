@@ -28,6 +28,8 @@ public class RegistrationController {
 
     @GetMapping("/signin")
     public ResponseEntity<String> signIn() {
-        return ResponseEntity.status(HttpStatus.CREATED).body("signin");
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body("signin");
     }
 }

@@ -36,7 +36,7 @@ public class UserRepositoryTest {
     }
 
     @Test
-    @DisplayName("Get user by ud")
+    @DisplayName("Get user by id")
     public void getUserById() {
         User userById = userRepository.getReferenceById(user.getId());
         assertThat(userById).isNotNull();
