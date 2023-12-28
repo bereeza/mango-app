@@ -38,4 +38,11 @@ public class UserService implements Service<User> {
     public void delete(User entity) {
         userRepository.delete(entity);
     }
+
+    public Optional<User> findUserByEmail(String email) {
+        return Optional.ofNullable(userRepository
+                .findUserByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found! Check email.")));
+    }
+
 }
