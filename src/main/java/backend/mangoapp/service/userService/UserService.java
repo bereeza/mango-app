@@ -3,16 +3,18 @@ package backend.mangoapp.service.userService;
 import backend.mangoapp.entity.User;
 import backend.mangoapp.repository.UserRepository;
 import backend.mangoapp.service.Service;
-import lombok.AllArgsConstructor;
 
 import java.util.List;
 import java.util.Optional;
 
 
 @org.springframework.stereotype.Service
-@AllArgsConstructor
 public class UserService implements Service<User> {
     private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public Optional<User> getById(long id) {

@@ -20,6 +20,11 @@ public class RegistrationController {
         this.userService = userService;
     }
 
+    @GetMapping
+    public String msg() {
+        return "Please, signIn or signUp.";
+    }
+
     @PostMapping
     public ResponseEntity<User> signUp(@RequestBody User user) {
         return ResponseEntity

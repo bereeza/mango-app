@@ -3,6 +3,7 @@ package backend.mangoapp.entity;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -22,6 +23,12 @@ public class User {
 
     @Column(name = "nickname")
     private String nickname;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Post> posts;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Comment> comments;
 
     public User(String email, String password, String nickname) {
         this.email = email;
