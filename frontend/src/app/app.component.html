@@ -1,3 +1,17 @@
-<input type="text" [(ngModel)]="name">
-<p>{{ name }}</p>
-<app-server></app-server>
+<div class="container">
+  <div class="row">
+    <div class="col-xs-12">
+      <label>Enter username</label>
+      <input type="text" class="form-control" [(ngModel)]="name">
+      <button class="btn btn-info" [disabled]="name === ''" (click)="checkStatus()">Reset</button>
+
+      <div *ngIf="nicknameStatus; else warningAlert">
+        <app-success-alert></app-success-alert>
+        <p> {{name}} </p>
+      </div>
+      <ng-template #warningAlert>
+        <app-warning-alert></app-warning-alert>
+      </ng-template>
+    </div>
+  </div>
+</div>
