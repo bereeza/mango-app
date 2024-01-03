@@ -22,7 +22,7 @@ public class UserRepositoryTest {
     private User user;
 
     @BeforeEach
-    private void setup() {
+    public void setup() {
         user = new User("carl@gmail.com", "12345", "@carl");
     }
 
@@ -38,7 +38,8 @@ public class UserRepositoryTest {
     @Test
     @DisplayName("Get user by id")
     public void getUserById() {
-        User userById = userRepository.getReferenceById(user.getId());
+        long id = user.getId();
+        User userById = userRepository.getReferenceById(id);
         assertThat(userById).isNotNull();
     }
 
@@ -54,7 +55,8 @@ public class UserRepositoryTest {
     @Test
     @DisplayName("Delete user by id")
     public void deleteUserByIdTest() {
+        long id = user.getId();
         userRepository.delete(user);
-        assertThat(userRepository.findById(user.getId())).isEmpty();
+        assertThat(userRepository.findById(id)).isEmpty();
     }
 }

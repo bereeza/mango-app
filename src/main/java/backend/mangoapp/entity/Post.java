@@ -29,4 +29,16 @@ public class Post {
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     private List<Comment> comments;
+
+    public Post(String description, Timestamp createdAt, User user, List<Comment> comments) {
+        this.description = description;
+        this.createdAt = createdAt;
+        this.user = user;
+        this.comments = comments;
+    }
+
+    public Post(String description, Timestamp timestamp) {
+        this.description = description;
+        this.createdAt = timestamp;
+    }
 }
