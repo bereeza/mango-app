@@ -19,8 +19,6 @@ public class HomeController {
 
     @GetMapping
     public ResponseEntity<List<Post>> getAllPosts() {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(postService.getAll());
+        return ResponseEntity.ok(postService.getAll());
     }
 }

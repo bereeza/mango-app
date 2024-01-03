@@ -31,8 +31,7 @@ public class Comment {
     private Post post;
 
     public Comment(String comment, Timestamp created_at, User user, Post post) {
-        this.comment = comment;
-        this.created_at = created_at;
+        this(comment, created_at);
         this.user = user;
         this.post = post;
     }

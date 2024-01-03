@@ -1,4 +1,4 @@
-package backend.mangoapp.service.CommentService;
+package backend.mangoapp.service.commentService;
 
 import backend.mangoapp.entity.Comment;
 import backend.mangoapp.repository.CommentRepository;

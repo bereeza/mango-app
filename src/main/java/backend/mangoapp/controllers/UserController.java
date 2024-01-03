@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/u")
 public class UserController {
@@ -16,8 +18,18 @@ public class UserController {
     @Autowired
     private PostService postService;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<List<Post>> getAllPersonalPost(@PathVariable long id) {
+        List<Post> personalPosts = postService.getAll().stream()
+                .filter(x -> x.getUser().getId() == id).toList();
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(personalPosts);
+    }
+
     @PostMapping("/{id}/posts")
-    public ResponseEntity<Post> addPost(@RequestParam long id,
+    public ResponseEntity<Post> addPost(@PathVariable long id,
                                         @RequestBody Post post) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -25,8 +37,8 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}/post/{postId}")
-    public String deletePost(@RequestParam long id,
-                             @RequestParam long postId) {
+    public String deletePost(@PathVariable long id,
+                             @PathVariable long postId) {
         if (postService.getById(postId).isPresent()) {
             postService.deleteById(postId);
             return "Post deleted";
