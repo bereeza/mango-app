@@ -1,0 +1,21 @@
+<div class="container">
+  <form>
+    <input type="email"
+           class="form-control"
+           [(ngModel)]="email" name="userEmail" placeholder="Enter email">
+    <input type="password"
+           class="form-control"
+           [(ngModel)]="password" name="userPassword" placeholder="Enter password">
+  </form>
+  <button class="btn btn-info"
+          [disabled]="email === '' || password === ''"
+          (click)="onSave()">Save
+  </button>
+  <p *ngIf="showMessage">
+    <app-success-alert></app-success-alert>
+    Hello, {{ email }}!
+  </p>
+  <p *ngIf="!showMessage">
+    <app-warning-alert></app-warning-alert>
+  </p>
+</div>
