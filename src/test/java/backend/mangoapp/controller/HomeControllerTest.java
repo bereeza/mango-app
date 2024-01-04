@@ -8,12 +8,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -25,22 +28,25 @@ public class HomeControllerTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    @Autowired
+    @MockBean
     private UserService userService;
 
-    @Autowired
+    @MockBean
     private PostService postService;
+
+    private Post post;
 
     @BeforeEach
     public void setup() {
         User user = new User("bob@gmail.com", "12345", "@bob");
-        userService.add(user);
-        Post post = new Post("Test post", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
-        postService.add(post);
+        when(userService.add(any(User.class))).thenReturn(user);
+        post = new Post("Test post", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
     }
 
     @Test
     public void getAllPosts() {
+        when(postService.getAll()).thenReturn(List.of(post));
+
         ParameterizedTypeReference<List<Post>> parameterizedTypeReference = new ParameterizedTypeReference<>() {
         };
 
