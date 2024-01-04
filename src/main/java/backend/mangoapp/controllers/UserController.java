@@ -24,7 +24,7 @@ public class UserController {
     public ResponseEntity<List<Post>> getAllPersonalPost(@PathVariable long id) {
         List<Post> personalPosts = postService.getAll().stream()
                 .filter(x -> x.getUser().getId() == id)
-                .collect(Collectors.toCollection(ArrayList::new));
+                .toList();
 
         return ResponseEntity
                 .status(HttpStatus.OK)
