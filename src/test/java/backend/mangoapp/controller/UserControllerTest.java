@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -17,8 +18,10 @@ import org.springframework.http.ResponseEntity;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class UserControllerTest {
@@ -26,35 +29,35 @@ public class UserControllerTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    @Autowired
+    @MockBean
     private UserService userService;
 
-    @Autowired
+    @MockBean
     private PostService postService;
 
     private User user;
-
+    private Post post;
     @BeforeEach
     public void setup() {
         user = new User("bob@gmail.com", "12345", "@bob");
-        userService.add(user);
-        Post firstUserPost = new Post("First user post",
+        post = new Post("First user post",
                 Timestamp.valueOf(LocalDateTime.now()),
                 user,
                 List.of());
-
-        postService.add(firstUserPost);
     }
 
     @Test
     public void getAllPersonalPostsTest() {
         long userId = user.getId();
+
+        when(userService.getById(userId)).thenReturn(Optional.of(user));
+        when(postService.getAll()).thenReturn(List.of(post));
+
         ResponseEntity<List<Post>> response = restTemplate.exchange(
                 "/u/" + userId,
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<>() {
-                });
+                new ParameterizedTypeReference<>() {});
 
         List<Post> personalPosts = response.getBody();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -65,10 +68,14 @@ public class UserControllerTest {
 
     @Test
     public void addPostTest() {
+        when(userService.getById(user.getId())).thenReturn(Optional.of(user));
+
         Post newPost = new Post("New post",
                 Timestamp.valueOf(LocalDateTime.now()),
                 user,
                 List.of());
+
+        when(postService.add(any(Post.class))).thenReturn(newPost);
 
         ResponseEntity<Post> response = restTemplate.postForEntity("/u/{id}",
                 newPost,
@@ -79,16 +86,19 @@ public class UserControllerTest {
         assertThat(response.getBody().getDescription()).isEqualTo("New post");
     }
 
+
     @Test
     public void deletePostTest() {
-        Post postToDelete = postService.getAll().get(0);
+        when(userService.getById(user.getId())).thenReturn(Optional.of(user));
+        when(postService.getById(post.getId())).thenReturn(Optional.of(post));
 
         ResponseEntity<String> response = restTemplate.exchange("/u/{id}/post/{postId}",
                 HttpMethod.DELETE,
                 null,
-                String.class, user.getId(), postToDelete.getId());
+                String.class, user.getId(), post.getId());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo("Post deleted");
+        verify(postService, times(1)).deleteById(post.getId());
     }
 }
