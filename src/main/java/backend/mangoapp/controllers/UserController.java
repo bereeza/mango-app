@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/u")
@@ -21,14 +23,16 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<List<Post>> getAllPersonalPost(@PathVariable long id) {
         List<Post> personalPosts = postService.getAll().stream()
-                .filter(x -> x.getUser().getId() == id).toList();
+                .filter(x -> x.getUser().getId() == id)
+                .collect(Collectors.toCollection(ArrayList::new));
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(personalPosts);
     }
 
-    @PostMapping("/{id}/posts")
+
+    @PostMapping("/{id}")
     public ResponseEntity<Post> addPost(@PathVariable long id,
                                         @RequestBody Post post) {
         return ResponseEntity
