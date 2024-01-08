@@ -1,5 +1,9 @@
 package backend.mangoapp.entity;
 
+import backend.mangoapp.utils.NicknameManager;
+import backend.mangoapp.utils.PasswordManger;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import javax.persistence.*;
@@ -30,9 +34,11 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Comment> comments;
 
-    public User(String email, String password, String nickname) {
+    @JsonCreator
+    public User(@JsonProperty("email") String email,
+                @JsonProperty("password") String password) {
         this.email = email;
-        this.password = password;
-        this.nickname = nickname;
+        this.password = PasswordManger.hashPassword(password);
+        this.nickname = NicknameManager.setNickname(email);
     }
 }
