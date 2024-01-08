@@ -31,13 +31,13 @@ public class UserServiceTest {
 
     @BeforeEach
     public void setup() {
-        user = new User("carl@gmail.com", "12345", "@carl");
+        user = new User("carl@gmail.com", "12345");
     }
 
     @Test
     @DisplayName("Saved user is not null")
     public void saveUserTest() {
-        User savedUser = new User("bob@gmail.com", "12345", "@bob");
+        User savedUser = new User("bob@gmail.com", "12345");
         userService.add(savedUser);
         verify(userRepository, times(1)).save(savedUser);
         assertThat(savedUser).isNotNull();
@@ -57,7 +57,7 @@ public class UserServiceTest {
     @Test
     @DisplayName("Get all users")
     public void getAllUsersTest() {
-        User newUser = new User("bob@gmail.com", "12345", "@bob");
+        User newUser = new User("bob@gmail.com", "12345");
         userService.add(newUser);
         verify(userRepository, times(1)).save(newUser);
         assertThat(newUser).isNotNull();

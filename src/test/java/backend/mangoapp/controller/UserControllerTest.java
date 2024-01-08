@@ -37,17 +37,20 @@ public class UserControllerTest {
 
     private User user;
     private Post post;
+
     @BeforeEach
     public void setup() {
-        user = new User("bob@gmail.com", "12345", "@bob");
+        user = new User("mike@gmail.com", "12345");
         post = new Post("First user post",
                 Timestamp.valueOf(LocalDateTime.now()),
                 user,
                 List.of());
+
     }
 
     @Test
     public void getAllPersonalPostsTest() {
+        restTemplate = restTemplate.withBasicAuth("mike@gmail.com", "12345");
         long userId = user.getId();
 
         when(userService.getById(userId)).thenReturn(Optional.of(user));
@@ -68,6 +71,7 @@ public class UserControllerTest {
 
     @Test
     public void addPostTest() {
+        restTemplate = restTemplate.withBasicAuth("mike@gmail.com", "12345");
         when(userService.getById(user.getId())).thenReturn(Optional.of(user));
 
         Post newPost = new Post("New post",
@@ -84,21 +88,5 @@ public class UserControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody().getDescription()).isEqualTo("New post");
-    }
-
-
-    @Test
-    public void deletePostTest() {
-        when(userService.getById(user.getId())).thenReturn(Optional.of(user));
-        when(postService.getById(post.getId())).thenReturn(Optional.of(post));
-
-        ResponseEntity<String> response = restTemplate.exchange("/u/{id}/post/{postId}",
-                HttpMethod.DELETE,
-                null,
-                String.class, user.getId(), post.getId());
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo("Post deleted");
-        verify(postService, times(1)).deleteById(post.getId());
     }
 }

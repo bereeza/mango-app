@@ -28,7 +28,7 @@ public class PostRepositoryTest {
 
     @BeforeEach
     public void setup() {
-        user = new User("carl@gmail.com", "12345", "@carl");
+        user = new User("carl@gmail.com", "12345");
         user = userRepository.save(user);
         post = new Post("Test post", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
     }

@@ -12,6 +12,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,22 +30,13 @@ public class HomeControllerTest {
     private TestRestTemplate restTemplate;
 
     @MockBean
-    private UserService userService;
-
-    @MockBean
     private PostService postService;
-
-    private Post post;
-
-    @BeforeEach
-    public void setup() {
-        User user = new User("bob@gmail.com", "12345", "@bob");
-        when(userService.add(any(User.class))).thenReturn(user);
-        post = new Post("Test post", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
-    }
 
     @Test
     public void getAllPosts() {
+        User user = new User("mike@gmail.com", "12345");
+        Post post = new Post("Test post", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
+        restTemplate = restTemplate.withBasicAuth("mike@gmail.com", "12345");
         when(postService.getAll()).thenReturn(List.of(post));
 
         ParameterizedTypeReference<List<Post>> parameterizedTypeReference = new ParameterizedTypeReference<>() {
@@ -57,8 +49,12 @@ public class HomeControllerTest {
                 parameterizedTypeReference
         );
 
+        assertThat(responseEntity).isNotNull();
+        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+
         List<Post> posts = responseEntity.getBody();
         assertThat(posts).isNotNull();
         assertThat(posts).hasSize(1);
     }
 }
+

@@ -35,7 +35,7 @@ public class CommentServiceTest {
 
     @BeforeEach
     public void setup() {
-        user = new User("carl@gmail.com", "12345", "@carl");
+        user = new User("carl@gmail.com", "12345");
         post = new Post("Test description", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
         comment = new Comment("Test comment", Timestamp.valueOf(LocalDateTime.now()), user, post);
     }

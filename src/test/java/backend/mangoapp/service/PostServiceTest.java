@@ -33,7 +33,7 @@ public class PostServiceTest {
 
     @BeforeEach
     public void setup() {
-        user = new User("carl@gmail.com", "12345", "@carl");
+        user = new User("carl@gmail.com", "12345");
         post = new Post("Test description", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
     }
 

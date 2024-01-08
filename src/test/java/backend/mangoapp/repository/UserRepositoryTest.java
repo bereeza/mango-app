@@ -23,7 +23,7 @@ public class UserRepositoryTest {
 
     @BeforeEach
     public void setup() {
-        user = new User("carl@gmail.com", "12345", "@carl");
+        user = new User("carl@gmail.com", "12345");
     }
 
     @Test
@@ -46,7 +46,7 @@ public class UserRepositoryTest {
     @Test
     @DisplayName("Get all users")
     public void getAllUsersTest() {
-        User newUser = new User("bob@gmail.com", "12345", "@bob");
+        User newUser = new User("bob@gmail.com", "12345");
         userRepository.save(newUser);
         List<User> users = List.of(user, newUser);
         assertThat(users.size()).isEqualTo(2);
