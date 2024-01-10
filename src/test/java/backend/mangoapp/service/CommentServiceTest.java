@@ -36,13 +36,13 @@ public class CommentServiceTest {
     @BeforeEach
     public void setup() {
         user = new User("carl@gmail.com", "12345");
-        post = new Post("Test description", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
-        comment = new Comment("Test comment", Timestamp.valueOf(LocalDateTime.now()), user, post);
+        post = new Post("Test description", user, List.of());
+        comment = new Comment("Test comment", user, post);
     }
 
     @Test
     public void saveCommentTest() {
-        Comment savedComment = new Comment("Save this comment", Timestamp.valueOf(LocalDateTime.now()), user, post);
+        Comment savedComment = new Comment("Save this comment", user, post);
         commentService.add(savedComment);
         verify(commentRepository, times(1)).save(savedComment);
         assertThat(savedComment).isNotNull();
@@ -67,7 +67,7 @@ public class CommentServiceTest {
 
     @Test
     public void getAllCommentsTest() {
-        Comment newComment = new Comment("Test comment", Timestamp.valueOf(LocalDateTime.now()), user, post);
+        Comment newComment = new Comment("Test comment", user, post);
         commentService.add(newComment);
         verify(commentRepository, times(1)).save(newComment);
 

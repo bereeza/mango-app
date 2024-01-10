@@ -35,7 +35,7 @@ public class HomeControllerTest {
     @Test
     public void getAllPosts() {
         User user = new User("mike@gmail.com", "12345");
-        Post post = new Post("Test post", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
+        Post post = new Post("Test post", user, List.of());
         restTemplate = restTemplate.withBasicAuth("mike@gmail.com", "12345");
         when(postService.getAll()).thenReturn(List.of(post));
 

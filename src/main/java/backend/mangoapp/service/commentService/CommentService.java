@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+@org.springframework.stereotype.Service
 public class CommentService implements Service<Comment> {
     private final CommentRepository commentRepository;
 

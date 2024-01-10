@@ -1,5 +1,7 @@
 package backend.mangoapp.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -28,16 +30,16 @@ public class Comment {
 
     @ManyToOne
     @JoinColumn(name = "post_id")
+    @JsonBackReference
     private Post post;
 
-    public Comment(String comment, Timestamp created_at, User user, Post post) {
-        this(comment, created_at);
+    public Comment(String comment, User user, Post post) {
+        this(comment);
         this.user = user;
         this.post = post;
     }
 
-    public Comment(String comment, Timestamp created_at) {
+    public Comment(String comment) {
         this.comment = comment;
-        this.created_at = created_at;
     }
 }

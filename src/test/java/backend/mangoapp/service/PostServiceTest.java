@@ -34,12 +34,12 @@ public class PostServiceTest {
     @BeforeEach
     public void setup() {
         user = new User("carl@gmail.com", "12345");
-        post = new Post("Test description", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
+        post = new Post("Test description", user, List.of());
     }
 
     @Test
     public void savePostTest() {
-        Post savedPost = new Post("Save this post", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
+        Post savedPost = new Post("Save this post",  user, List.of());
         postService.add(savedPost);
         verify(postRepository, times(1)).save(savedPost);
         assertThat(savedPost).isNotNull();
@@ -61,7 +61,7 @@ public class PostServiceTest {
 
     @Test
     public void getAllPostsTest() {
-        Post newPost = new Post("New post!", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
+        Post newPost = new Post("New post!", user, List.of());
         postService.add(newPost);
         verify(postRepository, times(1)).save(newPost);
         assertThat(newPost).isNotNull();

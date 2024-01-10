@@ -28,8 +28,8 @@ public class CommentRepositoryTest {
     @BeforeEach
     public void setup() {
         user = new User("carl@gmail.com", "12345");
-        post = new Post("test description", Timestamp.valueOf(LocalDateTime.now()));
-        comment = new Comment("Test comment", Timestamp.valueOf(LocalDateTime.now()), user, post);
+        post = new Post("test description");
+        comment = new Comment("Test comment", user, post);
     }
 
     @Test
@@ -50,7 +50,7 @@ public class CommentRepositoryTest {
 
     @Test
     public void getAllCommentsTest() {
-        Comment newComment = new Comment("Second comment", Timestamp.valueOf(LocalDateTime.now()), user, post);
+        Comment newComment = new Comment("Second comment",  user, post);
         commentRepository.save(newComment);
 
         assertThat(newComment.getUser()).isNotNull();

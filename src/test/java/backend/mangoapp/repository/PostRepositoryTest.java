@@ -30,7 +30,7 @@ public class PostRepositoryTest {
     public void setup() {
         user = new User("carl@gmail.com", "12345");
         user = userRepository.save(user);
-        post = new Post("Test post", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
+        post = new Post("Test post", user, List.of());
     }
 
     @Test
@@ -49,7 +49,7 @@ public class PostRepositoryTest {
 
     @Test
     public void getAllPostsTest() {
-        Post newPost = new Post("This is my second post", Timestamp.valueOf(LocalDateTime.now()), user, List.of());
+        Post newPost = new Post("This is my second post", user, List.of());
 
         postRepository.save(newPost);
 

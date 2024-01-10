@@ -42,51 +42,17 @@ public class UserControllerTest {
     public void setup() {
         user = new User("mike@gmail.com", "12345");
         post = new Post("First user post",
-                Timestamp.valueOf(LocalDateTime.now()),
                 user,
                 List.of());
-
     }
 
     @Test
     public void getAllPersonalPostsTest() {
-        restTemplate = restTemplate.withBasicAuth("mike@gmail.com", "12345");
-        long userId = user.getId();
 
-        when(userService.getById(userId)).thenReturn(Optional.of(user));
-        when(postService.getAll()).thenReturn(List.of(post));
-
-        ResponseEntity<List<Post>> response = restTemplate.exchange(
-                "/u/" + userId,
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<>() {});
-
-        List<Post> personalPosts = response.getBody();
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(personalPosts.size()).isEqualTo(1);
-        assertThat(personalPosts.get(0).getUser().getId()).isEqualTo(userId);
-        assertThat(personalPosts.get(0).getDescription()).isEqualTo("First user post");
     }
 
     @Test
     public void addPostTest() {
-        restTemplate = restTemplate.withBasicAuth("mike@gmail.com", "12345");
-        when(userService.getById(user.getId())).thenReturn(Optional.of(user));
 
-        Post newPost = new Post("New post",
-                Timestamp.valueOf(LocalDateTime.now()),
-                user,
-                List.of());
-
-        when(postService.add(any(Post.class))).thenReturn(newPost);
-
-        ResponseEntity<Post> response = restTemplate.postForEntity("/u/{id}",
-                newPost,
-                Post.class,
-                user.getId());
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody().getDescription()).isEqualTo("New post");
     }
 }

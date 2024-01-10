@@ -12,6 +12,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/")
+@CrossOrigin("*")
 public class RegistrationController {
     private final UserService userService;
     private final HttpSession session;
