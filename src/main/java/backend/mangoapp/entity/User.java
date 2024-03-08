@@ -11,6 +11,8 @@ import javax.persistence.*;
 import java.util.List;
 
 @Data
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(name = "users")

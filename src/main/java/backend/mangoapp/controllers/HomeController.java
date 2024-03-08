@@ -47,10 +47,12 @@ public class HomeController {
         Post post = postService.getById(id).orElseThrow(() -> new RuntimeException("Post doesn't found."));
         User user = (User) session.getAttribute("currentUser");
         post.getComments().add(comment);
-        comment.setUser(user);
-        comment.setPost(post);
-        comment.setCreated_at(new Timestamp(System.currentTimeMillis()));
-        commentService.add(comment);
+        Comment buildComment = Comment.builder()
+                .user(user)
+                .post(post)
+                .created_at(new Timestamp(System.currentTimeMillis()))
+                .build();
+        commentService.add(buildComment);
         return ResponseEntity.ok(post);
     }
 }

@@ -38,9 +38,11 @@ public class UserController {
     public ResponseEntity<Post> addPost(@PathVariable long id,
                                         @RequestBody Post post) {
         User user = userService.getById(id).orElseThrow(() -> new RuntimeException("User not found."));
-        post.setUser(user);
-        post.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-        user.getPosts().add(post);
+        Post buildPost = Post.builder()
+                .user(user)
+                .createdAt(new Timestamp(System.currentTimeMillis()))
+                .build();
+        user.getPosts().add(buildPost);
         postService.add(post);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
