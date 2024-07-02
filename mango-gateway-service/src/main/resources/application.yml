@@ -1,0 +1,20 @@
+server:
+  port: 1000
+
+spring:
+  application:
+    name: user-gateway
+  cloud:
+    config:
+      uri: http://localhost:8888
+    gateway:
+      routes:
+        - id: gateway-route
+          uri: http://localhost:1000
+          predicates:
+            - Path=/api/**
+
+        - id: mango-main-service
+          uri: http://localhost:1001
+          predicates:
+            - Path=/api/**
