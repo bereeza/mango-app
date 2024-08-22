@@ -1,5 +1,5 @@
 spring:
-  jpa:
-    generate-ddl: true
-    hibernate:
-      ddl-auto: update
+  application:
+    name: gateway
+  config:
+    import: configserver:http://localhost:8888/user-auth

@@ -1,4 +1,4 @@
 package backend.mangoapp.entity;
 
-public class Comment {
+public class Event {
 }

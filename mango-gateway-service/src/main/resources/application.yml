@@ -1,20 +1,21 @@
 server:
   port: 1000
+  error:
+    include-binding-errors: always
+    include-message: always
 
 spring:
-  application:
-    name: user-gateway
   cloud:
-    config:
-      uri: http://localhost:8888
     gateway:
       routes:
-        - id: gateway-route
+        - id: mango-gateway-route
           uri: http://localhost:1000
           predicates:
-            - Path=/api/**
+            - Path=/
 
-        - id: mango-main-service
+        - id: mango-main-route
           uri: http://localhost:1001
           predicates:
-            - Path=/api/**
+            - Path=/api/ping/**
+          filters:
+            - RewritePath=/api/(?<remaining>.*), /api/${remaining}
