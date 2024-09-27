@@ -4,18 +4,24 @@ server:
     include-binding-errors: always
     include-message: always
 
+jwt:
+  secret: ${JWT_SECRET}
+
 spring:
   cloud:
     gateway:
       routes:
-        - id: mango-gateway-route
+        - id: mango-gateway-service
           uri: http://localhost:1000
           predicates:
-            - Path=/
+              - Path=/api/v1/gateway/**
 
-        - id: mango-main-route
+        - id: mango-profile-service
           uri: http://localhost:1001
           predicates:
-            - Path=/api/ping/**
-          filters:
-            - RewritePath=/api/(?<remaining>.*), /api/${remaining}
+            - Path=/api/v1/u/**
+
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:user.sql

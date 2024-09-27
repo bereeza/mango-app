@@ -1,0 +1,25 @@
+version: "3.9"
+name: "mango-app"
+
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    volumes:
+      - ~/apps/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: g8292gwjo
+      POSTGRES_DB: mango_app
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - /path/to/local/data:/root/redis
+      - /path/to/local/redis.config:/usr/local/etc/redis/redis.conf
+    environment:
+      REDIS_PASSWORD: redis
+      REDIS_PORT: 6379

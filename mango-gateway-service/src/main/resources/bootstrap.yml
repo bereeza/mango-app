@@ -2,4 +2,6 @@ spring:
   application:
     name: gateway
   config:
-    import: configserver:http://localhost:8888/user-auth
+    import:
+      - configserver:http://localhost:8888/user
+      - configserver:http://localhost:8888/redis

@@ -5,14 +5,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
-import org.springframework.http.HttpStatus;
 
-@Data
+import java.io.Serializable;
+
 @Builder
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Jacksonized
-public class Response {
-    private HttpStatus status;
-    private String message;
+public class UserInfoDto implements Serializable {
+    private long id;
+
+    private String email;
+
+    private String username;
 }

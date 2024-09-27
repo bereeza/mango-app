@@ -1,0 +1,5 @@
+server:
+  port: 1001
+  error:
+    include-binding-errors: always
+    include-message: always
