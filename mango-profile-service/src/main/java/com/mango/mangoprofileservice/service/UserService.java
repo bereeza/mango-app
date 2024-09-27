@@ -34,14 +34,7 @@ public class UserService {
                                             .status(HttpStatus.OK)
                                             .message("Nickname changed successfully")
                                             .build()));
-                        }))
-                .onErrorResume(e -> {
-                    log.error("Error changing nickname: {}", e.getMessage());
-                    return Mono.just(Response.builder()
-                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .message("Error changing nickname")
-                            .build());
-                });
+                        }));
     }
 
     private Mono<UserInfoDto> getUserInfoDto(ServerWebExchange exchange) {
@@ -55,9 +48,9 @@ public class UserService {
     }
 
     private Mono<Void> updateRedisCache(ServerWebExchange exchange, UserInfoDto userInfo) {
-        return tokenService.extractToken(exchange) // Отримуємо токен у реактивному стилі
+        return tokenService.extractToken(exchange)
                 .flatMap(token -> redisTemplate.opsForValue()
-                        .set(token, userInfo)) // Використовуємо токен без блокування
+                        .set(token, userInfo))
                 .then();
     }
 }
