@@ -1,1 +1,1 @@
-GET http://localhost:8888/user-auth/default
+GET http://localhost:8888/user/default

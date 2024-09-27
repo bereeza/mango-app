@@ -1,9 +1,0 @@
-server:
-  port: 1001
-
-spring:
-  application:
-    name: mango-app
-  cloud:
-    config:
-      enabled: false
