@@ -32,12 +32,7 @@ public class UserService {
         return userRepository.findByEmail(req.getEmail())
                 .flatMap(user -> {
                     if (passwordEncoder.matches(req.getPassword(), user.getPassword())) {
-                        UserInfoDto userInfo = UserInfoDto.builder()
-                                .id(user.getUserid())
-                                .email(user.getEmail())
-                                .build();
-
-                        return getResponseMono(user, userInfo);
+                        return this.getAuthResponseMono(user);
                     } else {
                         return Mono.error(new BadCredentialsException("Invalid credentials"));
                     }
@@ -48,18 +43,24 @@ public class UserService {
     public Mono<AuthResponse> saveUser(AuthRequest req) {
         return userRepository.findByEmail(req.getEmail())
                 .flatMap(existingUser -> Mono.error(new UserAlreadyExistsException("User already exists")))
-                .then(Mono.defer(() ->
-                        userRepository.save(buildUser(req))
-                                .flatMap(savedUser -> {
-                                    UserInfoDto userInfo = UserInfoDto.builder()
-                                            .id(savedUser.getUserid())
-                                            .email(savedUser.getEmail())
-                                            .avatar(GravatarUtil.gravatar(savedUser.getEmail()))
-                                            .build();
+                .then(Mono.defer(() -> {
+                    User newUser = buildUser(req);
+                    String avatar = GravatarUtil.gravatar(newUser.getEmail());
+                    newUser.setAvatar(avatar);
+                    
+                    return userRepository.save(newUser)
+                            .flatMap(this::getAuthResponseMono);
+                }));
+    }
 
-                                    return getResponseMono(savedUser, userInfo);
-                                })
-                ));
+    private Mono<AuthResponse> getAuthResponseMono(User user) {
+        UserInfoDto userInfo = UserInfoDto.builder()
+                .id(user.getUserid())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .build();
+
+        return getResponseMono(user, userInfo);
     }
 
     private Mono<AuthResponse> getResponseMono(User savedUser, UserInfoDto userInfo) {
