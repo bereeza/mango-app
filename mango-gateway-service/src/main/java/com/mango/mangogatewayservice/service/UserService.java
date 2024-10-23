@@ -34,7 +34,6 @@ public class UserService {
                         UserInfoDto userInfo = UserInfoDto.builder()
                                 .id(user.getUserid())
                                 .email(user.getEmail())
-                                .username(user.getNickname())
                                 .build();
 
                         return getResponseMono(user, userInfo);
@@ -54,7 +53,6 @@ public class UserService {
                                     UserInfoDto userInfo = UserInfoDto.builder()
                                             .id(savedUser.getUserid())
                                             .email(savedUser.getEmail())
-                                            .username(savedUser.getEmail())
                                             .build();
 
                                     return getResponseMono(savedUser, userInfo);
@@ -84,12 +82,10 @@ public class UserService {
                 });
     }
 
-
     private User buildUser(AuthRequest req) {
         return User.builder()
                 .email(req.getEmail())
                 .password(passwordEncoder.encode(req.getPassword()))
-                .nickname(req.getEmail())
                 .build();
     }
 }

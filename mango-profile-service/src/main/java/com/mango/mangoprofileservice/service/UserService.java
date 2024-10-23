@@ -2,6 +2,7 @@ package com.mango.mangoprofileservice.service;
 
 import com.mango.mangoprofileservice.dto.Response;
 import com.mango.mangoprofileservice.dto.UserInfoDto;
+import com.mango.mangoprofileservice.exception.UserNotFoundException;
 import com.mango.mangoprofileservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,34 +24,31 @@ public class UserService {
         return getUserInfoDto(exchange);
     }
 
-    public Mono<Response> changeNickname(ServerWebExchange exchange, String nickname) {
-        return getUserInfoDto(exchange)
-                .flatMap(userInfoDto -> userRepository.findById(userInfoDto.getId())
-                        .flatMap(user -> {
-                            user.setNickname(nickname);
-                            return userRepository.save(user)
-                                    .then(updateRedisCache(exchange, userInfoDto))
-                                    .then(Mono.just(Response.builder()
-                                            .status(HttpStatus.OK)
-                                            .message("Nickname changed successfully")
-                                            .build()));
-                        }));
+    public Mono<Response> deleteCurrentUser(ServerWebExchange exchange) {
+        return getCurrentUser(exchange)
+                .flatMap(this::deleteUserIfExists);
+    }
+
+    private Mono<Response> deleteUserIfExists(UserInfoDto userInfo) {
+        Long userId = userInfo.getId();
+        return userRepository.existsById(userId)
+                .flatMap(exists -> exists ? deleteUser(userId) : Mono.error(new UserNotFoundException("Current user not found")));
+    }
+
+    private Mono<Response> deleteUser(Long userId) {
+        return userRepository.deleteById(userId)
+                .then(Mono.fromSupplier(() -> Response.builder()
+                        .message("User deleted successfully.")
+                        .status(HttpStatus.NO_CONTENT)
+                        .build()));
     }
 
     private Mono<UserInfoDto> getUserInfoDto(ServerWebExchange exchange) {
         return tokenService.extractToken(exchange)
                 .flatMap(token -> redisTemplate.opsForValue().get(token))
-                .doOnNext(currentUser -> log.info("CurrentUser: {}", currentUser))
                 .onErrorResume(e -> {
                     log.error("Error getting current user from Redis: {}", e.getMessage());
                     return Mono.empty();
                 });
-    }
-
-    private Mono<Void> updateRedisCache(ServerWebExchange exchange, UserInfoDto userInfo) {
-        return tokenService.extractToken(exchange)
-                .flatMap(token -> redisTemplate.opsForValue()
-                        .set(token, userInfo))
-                .then();
     }
 }

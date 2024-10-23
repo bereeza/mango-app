@@ -21,8 +21,8 @@ public class ProfileController {
         return userService.getCurrentUser(exchange);
     }
 
-    @PatchMapping("/change-nick")
-    public Mono<Response> changeNickname(ServerWebExchange exchange, @RequestBody RequestNickname req) {
-        return userService.changeNickname(exchange, req.getNickname());
+    @DeleteMapping
+    public Mono<Response> deleteCurrentUser(ServerWebExchange exchange) {
+        return userService.deleteCurrentUser(exchange);
     }
 }

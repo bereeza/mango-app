@@ -18,8 +18,8 @@ public class JwtProvider {
     private static final String AUTH_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
-    public String createToken(String username) {
-        Claims claims = Jwts.claims().setSubject(username);
+    public String createToken(String email) {
+        Claims claims = Jwts.claims().setSubject(email);
 
         Date now = new Date();
         Date validity = new Date(now.getTime() + 10800000);

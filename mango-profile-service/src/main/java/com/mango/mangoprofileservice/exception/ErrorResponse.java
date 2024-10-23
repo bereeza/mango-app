@@ -1,4 +1,4 @@
-package com.mango.mangoprofileservice.dto;
+package com.mango.mangoprofileservice.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,14 +6,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
 
-import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Builder
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Jacksonized
-public class UserInfoDto implements Serializable {
-    private long id;
-    private String email;
+public class ErrorResponse {
+    private LocalDateTime timestamp;
+    private int code;
+    private String message;
 }
