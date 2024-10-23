@@ -1,6 +1,5 @@
 package com.mango.mangoprofileservice.controller;
 
-import com.mango.mangoprofileservice.dto.RequestNickname;
 import com.mango.mangoprofileservice.dto.Response;
 import com.mango.mangoprofileservice.service.UserService;
 import com.mango.mangoprofileservice.dto.UserInfoDto;

@@ -17,4 +17,5 @@ public class User {
     private long userid;
     private String email;
     private String password;
+    private String avatar;
 }

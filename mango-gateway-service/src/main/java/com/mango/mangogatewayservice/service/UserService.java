@@ -8,6 +8,7 @@ import com.mango.mangogatewayservice.exception.UserAlreadyExistsException;
 import com.mango.mangogatewayservice.exception.UserNotFoundException;
 import com.mango.mangogatewayservice.auth.JwtProvider;
 import com.mango.mangogatewayservice.repository.UserRepository;
+import com.mango.mangogatewayservice.utils.GravatarUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
@@ -53,6 +54,7 @@ public class UserService {
                                     UserInfoDto userInfo = UserInfoDto.builder()
                                             .id(savedUser.getUserid())
                                             .email(savedUser.getEmail())
+                                            .avatar(GravatarUtil.gravatar(savedUser.getEmail()))
                                             .build();
 
                                     return getResponseMono(savedUser, userInfo);

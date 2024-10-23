@@ -14,4 +14,5 @@ import java.io.Serializable;
 public class UserInfoDto implements Serializable {
     private long id;
     private String email;
+    private String avatar;
 }
