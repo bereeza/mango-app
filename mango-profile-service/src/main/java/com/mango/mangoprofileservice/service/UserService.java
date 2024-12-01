@@ -2,6 +2,7 @@ package com.mango.mangoprofileservice.service;
 
 import com.mango.mangoprofileservice.dto.Response;
 import com.mango.mangoprofileservice.dto.UserInfoDto;
+import com.mango.mangoprofileservice.entity.User;
 import com.mango.mangoprofileservice.exception.UserNotFoundException;
 import com.mango.mangoprofileservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ public class UserService {
     private final TokenService tokenService;
 
     public Mono<UserInfoDto> getCurrentUser(ServerWebExchange exchange) {
-        return getUserInfoDto(exchange);
+        return buildUser(exchange);
     }
 
     public Mono<Response> deleteCurrentUser(ServerWebExchange exchange) {
@@ -40,15 +41,43 @@ public class UserService {
                 .then(Mono.fromSupplier(() -> Response.builder()
                         .message("User deleted successfully.")
                         .status(HttpStatus.NO_CONTENT)
-                        .build()));
+                        .build()))
+                .onErrorResume(e -> {
+                    log.error("User wasn't deleted.");
+                    return Mono.empty();
+                });
     }
 
-    private Mono<UserInfoDto> getUserInfoDto(ServerWebExchange exchange) {
+    private Mono<UserInfoDto> buildUser(ServerWebExchange exchange) {
+        return getUserInfoFromRedis(exchange)
+                .flatMap(user -> userRepository.findById(user.getId())
+                        .map(this::buildUserInfo))
+                .onErrorResume(e -> {
+                    log.error("User creation error {}", e.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    private Mono<UserInfoDto> getUserInfoFromRedis(ServerWebExchange exchange) {
         return tokenService.extractToken(exchange)
                 .flatMap(token -> redisTemplate.opsForValue().get(token))
                 .onErrorResume(e -> {
                     log.error("Error getting current user from Redis: {}", e.getMessage());
                     return Mono.empty();
                 });
+    }
+
+    private UserInfoDto buildUserInfo(User userInfo) {
+        return UserInfoDto.builder()
+                .id(userInfo.getId())
+                .email(userInfo.getEmail())
+                .firstName(userInfo.getFirstName())
+                .lastName(userInfo.getLastName())
+                .avatar(userInfo.getAvatar())
+                .cv(userInfo.getCv())
+                .about(userInfo.getAbout())
+                .reputation(userInfo.getReputation())
+                .links(userInfo.getLinks())
+                .build();
     }
 }

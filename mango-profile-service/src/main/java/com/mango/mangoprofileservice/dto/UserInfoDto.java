@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.extern.jackson.Jacksonized;
 
 import java.io.Serializable;
 
@@ -12,10 +11,14 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Jacksonized
 public class UserInfoDto implements Serializable {
     private long id;
     private String email;
+    private String firstName;
+    private String lastName;
     private String avatar;
+    private String cv;
     private String about;
+    private String reputation;
+    private String[] links;
 }
