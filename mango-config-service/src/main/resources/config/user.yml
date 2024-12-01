@@ -1,5 +1,5 @@
 spring:
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/mango_app
+    url: r2dbc:postgresql://localhost:5433/mango_app
     username: postgres
     password: g8292gwjo
