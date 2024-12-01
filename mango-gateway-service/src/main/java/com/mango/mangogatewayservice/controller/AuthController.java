@@ -1,5 +1,6 @@
 package com.mango.mangogatewayservice.controller;
 
+import com.mango.mangogatewayservice.dto.user.UserSaveDto;
 import com.mango.mangogatewayservice.dto.auth.AuthRequest;
 import com.mango.mangogatewayservice.dto.auth.AuthResponse;
 import com.mango.mangogatewayservice.service.UserService;
@@ -19,7 +20,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public Mono<AuthResponse> signup(@RequestBody AuthRequest authRequest) {
+    public Mono<AuthResponse> signup(@RequestBody UserSaveDto authRequest) {
         return userService.saveUser(authRequest);
     }
 }

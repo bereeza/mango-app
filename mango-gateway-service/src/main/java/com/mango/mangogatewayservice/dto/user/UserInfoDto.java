@@ -1,4 +1,4 @@
-package com.mango.mangogatewayservice.dto;
+package com.mango.mangogatewayservice.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

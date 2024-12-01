@@ -10,7 +10,6 @@ import lombok.extern.jackson.Jacksonized;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Jacksonized
 public class AuthRequest {
     private String email;
     private String password;

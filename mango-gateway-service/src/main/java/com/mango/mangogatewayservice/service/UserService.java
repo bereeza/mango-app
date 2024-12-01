@@ -1,6 +1,7 @@
 package com.mango.mangogatewayservice.service;
 
-import com.mango.mangogatewayservice.dto.UserInfoDto;
+import com.mango.mangogatewayservice.dto.user.UserInfoDto;
+import com.mango.mangogatewayservice.dto.user.UserSaveDto;
 import com.mango.mangogatewayservice.dto.auth.AuthRequest;
 import com.mango.mangogatewayservice.dto.auth.AuthResponse;
 import com.mango.mangogatewayservice.entity.User;
@@ -40,11 +41,11 @@ public class UserService {
                 .switchIfEmpty(Mono.error(new UserNotFoundException("User not found")));
     }
 
-    public Mono<AuthResponse> saveUser(AuthRequest req) {
+    public Mono<AuthResponse> saveUser(UserSaveDto req) {
         return userRepository.findByEmail(req.getEmail())
                 .flatMap(existingUser -> Mono.error(new UserAlreadyExistsException("User already exists")))
                 .then(Mono.defer(() -> {
-                    User newUser = buildUser(req);
+                    User newUser = buildSavedUser(req);
                     String avatar = GravatarUtil.gravatar(newUser.getEmail());
                     newUser.setAvatar(avatar);
                     
@@ -55,7 +56,7 @@ public class UserService {
 
     private Mono<AuthResponse> getAuthResponseMono(User user) {
         UserInfoDto userInfo = UserInfoDto.builder()
-                .id(user.getUserid())
+                .id(user.getId())
                 .email(user.getEmail())
                 .avatar(user.getAvatar())
                 .build();
@@ -77,7 +78,6 @@ public class UserService {
 
         return redisTemplate.opsForValue()
                 .set(token, userInfoDto, Duration.ofMillis(expirationTime))
-                .doOnNext(savedUserInfo -> log.info("Saved user info from Redis after save: {}", savedUserInfo))
                 .then()
                 .onErrorResume(e -> {
                     log.error("Error saving user info to Redis: {}", e.getMessage(), e);
@@ -85,10 +85,12 @@ public class UserService {
                 });
     }
 
-    private User buildUser(AuthRequest req) {
+    private User buildSavedUser(UserSaveDto req) {
         return User.builder()
                 .email(req.getEmail())
                 .password(passwordEncoder.encode(req.getPassword()))
+                .firstName(req.getFirstName())
+                .lastName(req.getLastName())
                 .build();
     }
 }
