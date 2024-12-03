@@ -30,6 +30,36 @@ public class UserService {
                 .flatMap(this::deleteUserIfExists);
     }
 
+    public Mono<Response> updateUserLinks(ServerWebExchange exchange, String link) {
+        return getCurrentUser(exchange)
+                .flatMap(currentUser ->
+                        userRepository.updateLinkAtIndex(link, currentUser.getId())
+                                .then(Mono.just(Response.builder()
+                                        .message("Link updated successfully.")
+                                        .status(HttpStatus.OK)
+                                        .build()))
+                )
+                .onErrorResume(e -> {
+                    log.error("Error updating link: {}", e.getMessage());
+                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                });
+    }
+
+    public Mono<Response> updateUserAboutSection(ServerWebExchange exchange, String about) {
+        return getCurrentUser(exchange)
+                .flatMap(currentUser ->
+                        userRepository.updateUserAbout(currentUser.getId(), about)
+                                .then(Mono.just(Response.builder()
+                                        .message("About section updated successfully.")
+                                        .status(HttpStatus.OK)
+                                        .build()))
+                )
+                .onErrorResume(e -> {
+                    log.error("Error updating about section: {}", e.getMessage());
+                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                });
+    }
+
     private Mono<Response> deleteUserIfExists(UserInfoDto userInfo) {
         Long userId = userInfo.getId();
         return userRepository.existsById(userId)
@@ -77,7 +107,7 @@ public class UserService {
                 .cv(userInfo.getCv())
                 .about(userInfo.getAbout())
                 .reputation(userInfo.getReputation())
-                .links(userInfo.getLinks())
+                .link(userInfo.getLink())
                 .build();
     }
 }

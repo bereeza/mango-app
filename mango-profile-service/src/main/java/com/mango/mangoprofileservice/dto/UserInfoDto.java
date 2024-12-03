@@ -20,5 +20,5 @@ public class UserInfoDto implements Serializable {
     private String cv;
     private String about;
     private String reputation;
-    private String[] links;
+    private String link;
 }

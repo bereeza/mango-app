@@ -12,7 +12,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "_user", schema = "mango")
+@Table(name = "users", schema = "mango")
 public class User {
     @Id
     @Column(value = "id")
@@ -42,6 +42,6 @@ public class User {
     @Column(value = "reputation")
     private String reputation;
 
-    @Column(value = "links")
-    private String[] links;
+    @Column(value = "link")
+    private String link;
 }
