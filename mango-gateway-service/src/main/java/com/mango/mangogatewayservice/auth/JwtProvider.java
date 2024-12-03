@@ -32,7 +32,7 @@ public class JwtProvider {
                 .compact();
     }
 
-    protected String extractToken(ServerWebExchange exchange) {
+    public String extractToken(ServerWebExchange exchange) {
         String token = exchange.getRequest()
                 .getHeaders()
                 .getFirst(AUTH_HEADER);

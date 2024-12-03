@@ -16,6 +16,7 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -35,15 +36,15 @@ public class UserService {
                     if (passwordEncoder.matches(req.getPassword(), user.getPassword())) {
                         return this.getAuthResponseMono(user);
                     } else {
-                        return Mono.error(new BadCredentialsException("Invalid credentials"));
+                        return Mono.error(new BadCredentialsException("Invalid credentials."));
                     }
                 })
-                .switchIfEmpty(Mono.error(new UserNotFoundException("User not found")));
+                .switchIfEmpty(Mono.error(new UserNotFoundException("User not found.")));
     }
 
     public Mono<AuthResponse> saveUser(UserSaveDto req) {
         return userRepository.findByEmail(req.getEmail())
-                .flatMap(existingUser -> Mono.error(new UserAlreadyExistsException("User already exists")))
+                .flatMap(existingUser -> Mono.error(new UserAlreadyExistsException("User already exists.")))
                 .then(Mono.defer(() -> {
                     User newUser = buildSavedUser(req);
                     String avatar = GravatarUtil.gravatar(newUser.getEmail());
@@ -52,6 +53,14 @@ public class UserService {
                     return userRepository.save(newUser)
                             .flatMap(this::getAuthResponseMono);
                 }));
+    }
+
+    public Mono<Void> signOut(ServerWebExchange exchange) {
+        return Mono.justOrEmpty(jwtProvider.extractToken(exchange))
+                .flatMap(token -> redisTemplate.delete(token)
+                        .doOnSuccess(deleted -> log.info("Token removed from Redis."))
+                        .then(Mono.just(token)))
+                .doOnTerminate(() -> log.info("User signed out.")).then();
     }
 
     private Mono<AuthResponse> getAuthResponseMono(User user) {
