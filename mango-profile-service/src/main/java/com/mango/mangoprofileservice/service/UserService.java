@@ -6,9 +6,14 @@ import com.mango.mangoprofileservice.entity.User;
 import com.mango.mangoprofileservice.exception.UserNotFoundException;
 import com.mango.mangoprofileservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -20,6 +25,7 @@ public class UserService {
     private final ReactiveRedisTemplate<String, UserInfoDto> redisTemplate;
     private final UserRepository userRepository;
     private final TokenService tokenService;
+    private final BucketService bucketService;
 
     public Mono<UserInfoDto> getCurrentUser(ServerWebExchange exchange) {
         return buildUser(exchange);
@@ -33,7 +39,7 @@ public class UserService {
     public Mono<Response> updateUserLinks(ServerWebExchange exchange, String link) {
         return getCurrentUser(exchange)
                 .flatMap(currentUser ->
-                        userRepository.updateLinkAtIndex(link, currentUser.getId())
+                        userRepository.updateLink(currentUser.getId(), link)
                                 .then(Mono.just(Response.builder()
                                         .message("Link updated successfully.")
                                         .status(HttpStatus.OK)
@@ -56,6 +62,44 @@ public class UserService {
                 )
                 .onErrorResume(e -> {
                     log.error("Error updating about section: {}", e.getMessage());
+                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                });
+    }
+
+    public Mono<Response> updateUserCV(ServerWebExchange exchange, FilePart file) {
+        return getCurrentUser(exchange)
+                .flatMap(currentUser -> {
+                    String link = bucketService.save(currentUser.getId(), file);
+                    return userRepository.updateUserCV(currentUser.getId(), link)
+                            .then(Mono.just(Response.builder()
+                                    .status(HttpStatus.OK)
+                                    .message("CV successfully saved")
+                                    .build()));
+                })
+                .onErrorResume(e -> {
+                    log.error("Error updating file. {}", e.getMessage());
+                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                });
+    }
+
+    @SneakyThrows
+    public Mono<ResponseEntity<Resource>> findCVById(long id) {
+        return userRepository.findById(id)
+                .flatMap(user -> {
+                    String url = user.getCv();
+
+                    if (url == null || url.isEmpty()) {
+                        return Mono.error(new IllegalArgumentException("CV not found for user"));
+                    }
+
+                    Resource fileResource = bucketService.getFileByUrl(url);
+
+                    return Mono.just(ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .body(fileResource));
+                })
+                .onErrorResume(e -> {
+                    log.error("Error fetching CV. {}", e.getMessage());
                     return Mono.error(new IllegalArgumentException(e.getMessage()));
                 });
     }
