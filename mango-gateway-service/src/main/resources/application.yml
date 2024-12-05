@@ -20,3 +20,8 @@ spring:
           uri: http://localhost:1001
           predicates:
             - Path=/api/v1/u/**
+
+        - id: mango-post-service
+          uri: http://localhost:1002
+          predicates:
+            - Path=/api/v1/post/**
