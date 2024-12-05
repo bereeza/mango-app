@@ -1,6 +1,6 @@
 package com.mango.mangogatewayservice.service;
 
-import com.mango.mangogatewayservice.dto.user.UserInfoDto;
+import com.mango.mangogatewayservice.dto.user.UserRedisInfo;
 import com.mango.mangogatewayservice.dto.user.UserSaveDto;
 import com.mango.mangogatewayservice.dto.auth.AuthRequest;
 import com.mango.mangogatewayservice.dto.auth.AuthResponse;
@@ -28,7 +28,7 @@ public class UserService {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final ReactiveRedisTemplate<String, UserInfoDto> redisTemplate;
+    private final ReactiveRedisTemplate<String, UserRedisInfo> redisTemplate;
 
     public Mono<AuthResponse> findByEmail(AuthRequest req) {
         return userRepository.findByEmail(req.getEmail())
@@ -64,16 +64,18 @@ public class UserService {
     }
 
     private Mono<AuthResponse> getAuthResponseMono(User user) {
-        UserInfoDto userInfo = UserInfoDto.builder()
+        UserRedisInfo userInfo = UserRedisInfo.builder()
                 .id(user.getId())
                 .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .avatar(user.getAvatar())
                 .build();
 
         return getResponseMono(user, userInfo);
     }
 
-    private Mono<AuthResponse> getResponseMono(User savedUser, UserInfoDto userInfo) {
+    private Mono<AuthResponse> getResponseMono(User savedUser, UserRedisInfo userInfo) {
         String token = jwtProvider.createToken(savedUser.getEmail());
 
         return saveUserToRedis(token, userInfo)
@@ -82,7 +84,7 @@ public class UserService {
                         .build()));
     }
 
-    private Mono<Void> saveUserToRedis(String token, UserInfoDto userInfoDto) {
+    private Mono<Void> saveUserToRedis(String token, UserRedisInfo userInfoDto) {
         long expirationTime = 10800000;
 
         return redisTemplate.opsForValue()

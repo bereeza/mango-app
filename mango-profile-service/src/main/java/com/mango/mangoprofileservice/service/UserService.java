@@ -2,6 +2,7 @@ package com.mango.mangoprofileservice.service;
 
 import com.mango.mangoprofileservice.dto.Response;
 import com.mango.mangoprofileservice.dto.UserInfoDto;
+import com.mango.mangoprofileservice.dto.UserRedisInfo;
 import com.mango.mangoprofileservice.entity.User;
 import com.mango.mangoprofileservice.exception.UserNotFoundException;
 import com.mango.mangoprofileservice.repository.UserRepository;
@@ -22,7 +23,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 @Slf4j
 public class UserService {
-    private final ReactiveRedisTemplate<String, UserInfoDto> redisTemplate;
+    private final ReactiveRedisTemplate<String, UserRedisInfo> redisTemplate;
     private final UserRepository userRepository;
     private final TokenService tokenService;
     private final BucketService bucketService;
@@ -132,7 +133,7 @@ public class UserService {
                 });
     }
 
-    private Mono<UserInfoDto> getUserInfoFromRedis(ServerWebExchange exchange) {
+    private Mono<UserRedisInfo> getUserInfoFromRedis(ServerWebExchange exchange) {
         return tokenService.extractToken(exchange)
                 .flatMap(token -> redisTemplate.opsForValue().get(token))
                 .onErrorResume(e -> {

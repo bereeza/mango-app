@@ -1,6 +1,6 @@
 package com.mango.mangoprofileservice.config;
 
-import com.mango.mangoprofileservice.dto.UserInfoDto;
+import com.mango.mangoprofileservice.dto.UserRedisInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.ReactiveKeyCommands;
@@ -15,10 +15,10 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
 
     @Bean
-    public ReactiveRedisTemplate<String, UserInfoDto> reactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
-        Jackson2JsonRedisSerializer<UserInfoDto> serializer = new Jackson2JsonRedisSerializer<>(UserInfoDto.class);
-        RedisSerializationContext.RedisSerializationContextBuilder<String, UserInfoDto> builder = RedisSerializationContext.newSerializationContext(new StringRedisSerializer());
-        RedisSerializationContext<String, UserInfoDto> context = builder.value(serializer)
+    public ReactiveRedisTemplate<String, UserRedisInfo> reactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
+        Jackson2JsonRedisSerializer<UserRedisInfo> serializer = new Jackson2JsonRedisSerializer<>(UserRedisInfo.class);
+        RedisSerializationContext.RedisSerializationContextBuilder<String, UserRedisInfo> builder = RedisSerializationContext.newSerializationContext(new StringRedisSerializer());
+        RedisSerializationContext<String, UserRedisInfo> context = builder.value(serializer)
                 .build();
         return new ReactiveRedisTemplate<>(factory, context);
     }
