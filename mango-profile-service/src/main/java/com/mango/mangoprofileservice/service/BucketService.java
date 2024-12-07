@@ -7,6 +7,7 @@ import com.google.cloud.storage.Storage;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -23,13 +24,19 @@ import java.util.List;
 public class BucketService {
 
     private final Storage storage;
-    private static final String BUCKET_NAME = "mango-app";
+
+    @Value("${gcp.bucket.id}")
+    private String bucketName;
+
+    @Value("${gcp.bucket.dir}")
+    private String bucketDir;
+
     private static final String GOOGLE_STORAGE = "https://storage.googleapis.com/";
 
     @SneakyThrows
     public String save(long id, FilePart file) {
-        String fileName = id + "-" + file.filename();
-        BlobId blobId = BlobId.of(BUCKET_NAME, fileName);
+        String fileName = bucketDir + "/" + id + "-" + file.filename();
+        BlobId blobId = BlobId.of(bucketName, fileName);
 
         byte[] fileBytes = extractFileBytes(file);
 

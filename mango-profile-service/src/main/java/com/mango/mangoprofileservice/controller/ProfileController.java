@@ -2,7 +2,6 @@ package com.mango.mangoprofileservice.controller;
 
 import com.mango.mangoprofileservice.dto.UpdateRequest;
 import com.mango.mangoprofileservice.dto.Response;
-import com.mango.mangoprofileservice.exception.NotPDFFileException;
 import com.mango.mangoprofileservice.service.UserService;
 import com.mango.mangoprofileservice.dto.UserInfoDto;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,6 @@ import reactor.core.publisher.Mono;
 public class ProfileController {
 
     private final UserService userService;
-    private static final String DOC_FORMAT = ".pdf";
 
     @GetMapping
     public Mono<UserInfoDto> getCurrentUser(ServerWebExchange exchange) {
@@ -51,10 +49,6 @@ public class ProfileController {
     public Mono<Response> updateUserCV(
             ServerWebExchange exchange,
             @RequestPart("file") FilePart file) {
-
-        if (file.filename().endsWith(DOC_FORMAT)) {
-            throw new NotPDFFileException("Unsupported file type");
-        }
 
         return userService.updateUserCV(exchange, file);
     }
