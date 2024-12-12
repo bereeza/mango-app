@@ -1,4 +1,4 @@
-package com.mango.mangoprofileservice.dto;
+package com.mango.mangoprofileservice.dto.user;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,6 +1,6 @@
 package com.mango.mangoprofileservice.config;
 
-import com.mango.mangoprofileservice.dto.UserRedisInfo;
+import com.mango.mangoprofileservice.dto.user.UserRedisInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.ReactiveKeyCommands;

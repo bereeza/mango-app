@@ -8,14 +8,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 
-import java.net.URL;
 import java.util.List;
 
 @Service
@@ -31,10 +28,8 @@ public class BucketService {
     @Value("${gcp.bucket.dir}")
     private String bucketDir;
 
-    private static final String GOOGLE_STORAGE = "https://storage.googleapis.com/";
-
     @SneakyThrows
-    public String save(long id, FilePart file) {
+    public String saveFile(long id, FilePart file) {
         String fileName = bucketDir + "/" + id + "-" + file.filename();
         BlobId blobId = BlobId.of(bucketName, fileName);
 
@@ -43,13 +38,20 @@ public class BucketService {
         BlobInfo blobInfo = createBlobInfo(blobId);
         Blob blob = storage.create(blobInfo, fileBytes);
 
-        return GOOGLE_STORAGE + blob.getBucket() + "/" + blob.getName();
+        return blob.getName();
     }
 
     @SneakyThrows
-    public Resource getFileByUrl(String fileUrl) {
-        URL url = new URL(fileUrl);
-        return new UrlResource(url);
+    public void dropFile(String filePath) {
+        BlobId id = BlobId.of(bucketName, filePath);
+        storage.delete(id);
+    }
+
+    @SneakyThrows
+    public byte[] getFile(String url) {
+        BlobId id = BlobId.of(bucketName, url);
+        Blob blob = storage.get(id);
+        return blob.getContent();
     }
 
     private byte[] extractFileBytes(FilePart file) {

@@ -1,16 +1,18 @@
 package com.mango.mangoprofileservice.service;
 
 import com.mango.mangoprofileservice.dto.Response;
-import com.mango.mangoprofileservice.dto.UserInfoDto;
-import com.mango.mangoprofileservice.dto.UserRedisInfo;
+import com.mango.mangoprofileservice.dto.user.UserById;
+import com.mango.mangoprofileservice.dto.user.UserInfoDto;
+import com.mango.mangoprofileservice.dto.user.UserRedisInfo;
 import com.mango.mangoprofileservice.entity.User;
 import com.mango.mangoprofileservice.exception.UserNotFoundException;
 import com.mango.mangoprofileservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,12 @@ public class UserService {
     public Mono<Response> deleteCurrentUser(ServerWebExchange exchange) {
         return getCurrentUser(exchange)
                 .flatMap(this::deleteUserIfExists);
+    }
+
+    public Mono<UserById> getUserById(long id) {
+        return userRepository.findById(id)
+                .map(this::buildUserById)
+                .switchIfEmpty(Mono.error(new UserNotFoundException("User not found")));
     }
 
     public Mono<Response> updateUserLinks(ServerWebExchange exchange, String link) {
@@ -70,7 +78,11 @@ public class UserService {
     public Mono<Response> updateUserCV(ServerWebExchange exchange, FilePart file) {
         return getCurrentUser(exchange)
                 .flatMap(currentUser -> {
-                    String link = bucketService.save(currentUser.getId(), file);
+                    if (currentUser.getCv() != null) {
+                        bucketService.dropFile(currentUser.getCv());
+                    }
+
+                    String link = bucketService.saveFile(currentUser.getId(), file);
                     return userRepository.updateUserCV(currentUser.getId(), link)
                             .then(Mono.just(Response.builder()
                                     .status(HttpStatus.OK)
@@ -84,7 +96,7 @@ public class UserService {
     }
 
     @SneakyThrows
-    public Mono<ResponseEntity<Resource>> findCVById(long id) {
+    public Mono<ResponseEntity<ByteArrayResource>> findCVById(long id) {
         return userRepository.findById(id)
                 .flatMap(user -> {
                     String url = user.getCv();
@@ -93,11 +105,14 @@ public class UserService {
                         return Mono.error(new IllegalArgumentException("CV not found for user"));
                     }
 
-                    Resource fileResource = bucketService.getFileByUrl(url);
+                    byte[] fileBytes = bucketService.getFile(url);
+                    ByteArrayResource resource = new ByteArrayResource(fileBytes);
 
                     return Mono.just(ResponseEntity.ok()
                             .contentType(MediaType.APPLICATION_PDF)
-                            .body(fileResource));
+                            .contentLength(fileBytes.length)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "application/pdf")
+                            .body(resource));
                 })
                 .onErrorResume(e -> {
                     log.error("Error fetching CV. {}", e.getMessage());
@@ -142,17 +157,30 @@ public class UserService {
                 });
     }
 
-    private UserInfoDto buildUserInfo(User userInfo) {
+    public UserById buildUserById(User user) {
+        return UserById.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .avatar(user.getAvatar())
+                .cv(user.getCv())
+                .about(user.getAbout())
+                .reputation(user.getReputation())
+                .link(user.getLink())
+                .build();
+    }
+
+    private UserInfoDto buildUserInfo(User user) {
         return UserInfoDto.builder()
-                .id(userInfo.getId())
-                .email(userInfo.getEmail())
-                .firstName(userInfo.getFirstName())
-                .lastName(userInfo.getLastName())
-                .avatar(userInfo.getAvatar())
-                .cv(userInfo.getCv())
-                .about(userInfo.getAbout())
-                .reputation(userInfo.getReputation())
-                .link(userInfo.getLink())
+                .id(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .avatar(user.getAvatar())
+                .cv(user.getCv())
+                .about(user.getAbout())
+                .reputation(user.getReputation())
+                .link(user.getLink())
                 .build();
     }
 }

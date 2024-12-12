@@ -1,12 +1,12 @@
 package com.mango.mangoprofileservice.controller;
 
-import com.mango.mangoprofileservice.dto.UpdateRequest;
+import com.mango.mangoprofileservice.dto.user.UpdateRequest;
 import com.mango.mangoprofileservice.dto.Response;
+import com.mango.mangoprofileservice.dto.user.UserById;
 import com.mango.mangoprofileservice.service.UserService;
-import com.mango.mangoprofileservice.dto.UserInfoDto;
+import com.mango.mangoprofileservice.dto.user.UserInfoDto;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +16,6 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/v1/u")
 @RequiredArgsConstructor
-@Slf4j
 public class ProfileController {
 
     private final UserService userService;
@@ -29,6 +28,11 @@ public class ProfileController {
     @DeleteMapping
     public Mono<Response> deleteCurrentUser(ServerWebExchange exchange) {
         return userService.deleteCurrentUser(exchange);
+    }
+
+    @GetMapping("/{id}")
+    public Mono<UserById> getUserById(@PathVariable long id) {
+        return userService.getUserById(id);
     }
 
     @PutMapping("/update/link")
@@ -54,7 +58,7 @@ public class ProfileController {
     }
 
     @GetMapping("/cv/{id}")
-    public Mono<ResponseEntity<Resource>> getUserCV(@PathVariable long id) {
+    public Mono<ResponseEntity<ByteArrayResource>> getUserCV(@PathVariable long id) {
         return userService.findCVById(id);
     }
 }
