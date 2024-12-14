@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler({UserNotFoundException.class, PostNotFoundException.class})
+    @ExceptionHandler({UserNotFoundException.class, PostNotFoundException.class, CommentNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleUserNotFoundException(RuntimeException ex) {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())

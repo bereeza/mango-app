@@ -1,6 +1,7 @@
 package com.mango.postservice.controller;
 
 import com.mango.postservice.dto.PagePayload;
+import com.mango.postservice.dto.comment.CommentSaveDto;
 import com.mango.postservice.dto.post.PostInfoDto;
 import com.mango.postservice.dto.post.PostSaveDto;
 import com.mango.postservice.dto.Response;
@@ -55,5 +56,19 @@ public class PostController {
         int size = request.getSize();
         Pageable pageable = PageRequest.of(page, size);
         return postService.findAll(pageable);
+    }
+
+    @PostMapping("/{id}/comment")
+    public Mono<Response> saveComment(ServerWebExchange exchange,
+                                      @PathVariable long id,
+                                      @RequestBody CommentSaveDto comment) {
+        return postService.saveComment(exchange, id, comment);
+    }
+
+    @DeleteMapping("/{id}/comment/{commentId}")
+    public Mono<Response> deleteComment(ServerWebExchange exchange,
+                                        @PathVariable long id,
+                                        @PathVariable long commentId) {
+        return postService.deleteComment(exchange, id, commentId);
     }
 }
