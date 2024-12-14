@@ -1,7 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS mango;
 SET search_path TO mango;
 
-CREATE TABLE IF NOT EXISTS _user
+CREATE TABLE IF NOT EXISTS users
 (
     id         SERIAL PRIMARY KEY  NOT NULL,
     email      VARCHAR(128) UNIQUE NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS _user
     cv         VARCHAR(255),
     about      VARCHAR(2000),
     reputation BIGINT DEFAULT 0,
-    links      VARCHAR(255)[3]
+    links      VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS company
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS company
     logo        VARCHAR(255),
     created_at  TIMESTAMP,
     ceo_id      INT                NOT NULL,
-    FOREIGN KEY (ceo_id) REFERENCES _user (id) ON DELETE CASCADE
+    FOREIGN KEY (ceo_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS company_employees
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS company_employees
     user_id    INT                NOT NULL,
     user_role  VARCHAR(255)       NOT NULL,
     FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES _user (id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS vacancy
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS vacancy
     max_limit    INT                NOT NULL,
     created_at   TIMESTAMP,
     closed_at    TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES _user (id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE
 );
 
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS vacancy_applicants
     cover_letter     VARCHAR(100),
     application_date TIMESTAMP,
     FOREIGN KEY (vacancy_id) REFERENCES vacancy (id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES _user (id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS vacancy_statistic
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS post
     text       VARCHAR(2000),
     photo_link VARCHAR(255),
     reputation BIGINT DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES _user (id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS comment

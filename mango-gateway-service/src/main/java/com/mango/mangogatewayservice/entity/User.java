@@ -30,6 +30,9 @@ public class User {
     @Column(value = "avatar")
     private String avatar;
 
+    @Column(value = "cv")
+    private String cv;
+
     @Column(value = "about")
     private String about;
 
