@@ -1,4 +1,4 @@
-package com.mango.postservice.dto;
+package com.mango.postservice.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,10 +11,11 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserRedisInfo implements Serializable {
+public class UserInfoDto implements Serializable {
     private long id;
-    private String email;
     private String firstName;
     private String lastName;
     private String avatar;
+    private String reputation;
 }
+

@@ -1,7 +1,7 @@
 package com.mango.postservice.service;
 
-import com.mango.postservice.dto.UserInfoDto;
-import com.mango.postservice.dto.UserRedisInfo;
+import com.mango.postservice.dto.user.UserInfoDto;
+import com.mango.postservice.dto.user.UserRedisInfo;
 import com.mango.postservice.entity.User;
 import com.mango.postservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

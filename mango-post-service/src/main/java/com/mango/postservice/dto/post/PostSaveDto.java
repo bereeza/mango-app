@@ -1,4 +1,4 @@
-package com.mango.postservice.dto;
+package com.mango.postservice.dto.post;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

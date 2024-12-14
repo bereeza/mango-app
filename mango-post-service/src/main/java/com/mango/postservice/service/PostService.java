@@ -1,6 +1,6 @@
 package com.mango.postservice.service;
 
-import com.mango.postservice.dto.PostInfoDto;
+import com.mango.postservice.dto.post.PostInfoDto;
 import com.mango.postservice.dto.Response;
 import com.mango.postservice.entity.Post;
 import com.mango.postservice.exception.PostNotFoundException;
@@ -66,6 +66,30 @@ public class PostService {
                 .onErrorResume(e -> {
                     log.error("Post wasn't deleted: {}", e.getMessage());
                     return Mono.error(new IllegalArgumentException(e.getMessage()));
+                });
+    }
+
+    public Mono<Response> updatePost(ServerWebExchange exchange,
+                                     long id,
+                                     String text) {
+        return userRedisService.buildUser(exchange)
+                .flatMap(user -> postRepository.findById(id)
+                        .flatMap(post -> {
+                            if (user.getId() != post.getUserId()) {
+                                log.error("You cannot update other users' posts.");
+                                return Mono.error(new IllegalArgumentException("You cannot update other users' posts."));
+                            }
+
+                            return postRepository.updateText(post.getId(), text)
+                                    .then(Mono.just(Response.builder()
+                                            .message("Post updated successfully.")
+                                            .status(HttpStatus.OK)
+                                            .build()));
+
+                        }))
+                .onErrorResume(e -> {
+                    log.error("Post not found: {}", e.getMessage());
+                    return Mono.error(new IllegalArgumentException("Post not found"));
                 });
     }
 

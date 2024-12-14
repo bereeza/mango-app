@@ -1,7 +1,7 @@
 package com.mango.postservice.config;
 
 
-import com.mango.postservice.dto.UserRedisInfo;
+import com.mango.postservice.dto.user.UserRedisInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.ReactiveKeyCommands;

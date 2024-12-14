@@ -1,8 +1,9 @@
 package com.mango.postservice.controller;
 
-import com.mango.postservice.dto.PostInfoDto;
-import com.mango.postservice.dto.PostSaveDto;
+import com.mango.postservice.dto.post.PostInfoDto;
+import com.mango.postservice.dto.post.PostSaveDto;
 import com.mango.postservice.dto.Response;
+import com.mango.postservice.dto.post.PostTextUpdate;
 import com.mango.postservice.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,5 +35,12 @@ public class PostController {
     public Mono<Response> deletePost(ServerWebExchange exchange,
                                      @PathVariable long id) {
         return postService.deletePost(exchange, id);
+    }
+
+    @PatchMapping("/{id}")
+    public Mono<Response> updatePost(ServerWebExchange exchange,
+                                     @PathVariable long id,
+                                     @RequestBody PostTextUpdate text) {
+        return postService.updatePost(exchange, id, text.getText());
     }
 }
