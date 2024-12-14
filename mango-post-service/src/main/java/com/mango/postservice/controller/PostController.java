@@ -1,15 +1,20 @@
 package com.mango.postservice.controller;
 
+import com.mango.postservice.dto.PagePayload;
 import com.mango.postservice.dto.post.PostInfoDto;
 import com.mango.postservice.dto.post.PostSaveDto;
 import com.mango.postservice.dto.Response;
 import com.mango.postservice.dto.post.PostTextUpdate;
+import com.mango.postservice.entity.Post;
 import com.mango.postservice.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -42,5 +47,13 @@ public class PostController {
                                      @PathVariable long id,
                                      @RequestBody PostTextUpdate text) {
         return postService.updatePost(exchange, id, text.getText());
+    }
+
+    @PostMapping
+    public Flux<Post> findPosts(@RequestBody PagePayload request) {
+        int page = request.getPage();
+        int size = request.getSize();
+        Pageable pageable = PageRequest.of(page, size);
+        return postService.findAll(pageable);
     }
 }

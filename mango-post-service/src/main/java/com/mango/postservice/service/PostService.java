@@ -7,10 +7,12 @@ import com.mango.postservice.exception.PostNotFoundException;
 import com.mango.postservice.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -90,6 +92,14 @@ public class PostService {
                 .onErrorResume(e -> {
                     log.error("Post not found: {}", e.getMessage());
                     return Mono.error(new IllegalArgumentException("Post not found"));
+                });
+    }
+
+    public Flux<Post> findAll(Pageable pageable) {
+        return postRepository.findAllBy(pageable)
+                .onErrorResume(e -> {
+                    log.error("Something went wrong: {}", e.getMessage());
+                    return Mono.error(new IllegalArgumentException(e.getMessage()));
                 });
     }
 
