@@ -5,11 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-
-import java.util.List;
 
 @Data
 @Builder
@@ -47,7 +44,4 @@ public class User {
 
     @Column(value = "link")
     private String link;
-
-    @Transient
-    private List<Post> posts;
 }
