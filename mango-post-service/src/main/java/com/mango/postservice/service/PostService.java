@@ -156,6 +156,13 @@ public class PostService {
                 });
     }
 
+    public Flux<Comment> findAll(long postId, Pageable pageable) {
+        return commentRepository.findAllBy(postId, pageable)
+                .onErrorResume(e -> {
+                    log.error("Something went wrong: {}", e.getMessage());
+                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                });
+    }
 
     private Comment buildComment(UserInfoDto user, long id, CommentSaveDto dto) {
         return Comment.builder()

@@ -6,6 +6,7 @@ import com.mango.postservice.dto.post.PostInfoDto;
 import com.mango.postservice.dto.post.PostSaveDto;
 import com.mango.postservice.dto.Response;
 import com.mango.postservice.dto.post.PostTextUpdate;
+import com.mango.postservice.entity.Comment;
 import com.mango.postservice.entity.Post;
 import com.mango.postservice.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -70,5 +71,14 @@ public class PostController {
                                         @PathVariable long id,
                                         @PathVariable long commentId) {
         return postService.deleteComment(exchange, id, commentId);
+    }
+
+    @PostMapping("/{id}/comment/all")
+    public Flux<Comment> findComments(@PathVariable long id,
+                                      @RequestBody PagePayload request) {
+        int page = request.getPage();
+        int size = request.getSize();
+        Pageable pageable = PageRequest.of(page, size);
+        return postService.findAll(id, pageable);
     }
 }
