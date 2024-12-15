@@ -16,5 +16,4 @@ public class PostInfoDto implements Serializable {
     private long userId;
     private String text;
     private String photoLink;
-    private long reputation;
 }

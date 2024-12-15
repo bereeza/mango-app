@@ -26,7 +26,4 @@ public class Post {
 
     @Column(value = "photo_link")
     private String photoLink;
-
-    @Column(value = "reputation")
-    private long reputation;
 }

@@ -10,6 +10,7 @@ import com.mango.postservice.exception.CommentNotFoundException;
 import com.mango.postservice.exception.PostNotFoundException;
 import com.mango.postservice.repository.CommentRepository;
 import com.mango.postservice.repository.PostRepository;
+import com.mango.postservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -30,18 +31,15 @@ public class PostService {
     private final CommentRepository commentRepository;
     private final BucketService bucketService;
     private final UserRedisService userRedisService;
+    private final UserRepository userRepository;
 
     public Mono<Response> savePost(ServerWebExchange exchange, String text, FilePart file) {
         return userRedisService.buildUser(exchange)
-                .flatMap(user -> {
-                    String link = bucketService.save(file);
-                    Post post = buildPost(user.getId(), text, link);
-                    return postRepository.save(post)
-                            .then(Mono.just(Response.builder()
-                                    .message("Post successfully saved")
-                                    .status(HttpStatus.CREATED)
-                                    .build()));
-                })
+                .flatMap(user -> savePostAndIncrementReputation(user, text, file))
+                .map(savedPost -> Response.builder()
+                        .message("Post successfully saved and reputation updated")
+                        .status(HttpStatus.CREATED)
+                        .build())
                 .onErrorResume(e -> {
                     log.error("Post wasn't saved: {}", e.getMessage());
                     return Mono.error(new IllegalArgumentException(e.getMessage()));
@@ -111,22 +109,13 @@ public class PostService {
                 });
     }
 
-    public Mono<Response> saveComment(ServerWebExchange exchange,
-                                      long id,
-                                      CommentSaveDto dto) {
+    public Mono<Response> saveComment(ServerWebExchange exchange, long id, CommentSaveDto dto) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> postRepository.findById(id)
-                        .flatMap(post -> {
-                            Comment comment = buildComment(user, post.getId(), dto);
-                            return commentRepository.save(comment)
-                                    .then(Mono.just(Response.builder()
-                                            .message("Comment successfully saved.")
-                                            .status(HttpStatus.CREATED)
-                                            .build()));
-                        })
+                        .flatMap(post -> saveCommentAndIncrementReputation(user, post, dto))
                         .switchIfEmpty(Mono.error(new PostNotFoundException("Post not found."))))
                 .onErrorResume(e -> {
-                    log.error("Post not found: {}", e.getMessage());
+                    log.error("Error saving comment: {}", e.getMessage());
                     return Mono.error(new IllegalArgumentException(e.getMessage()));
                 });
     }
@@ -164,6 +153,26 @@ public class PostService {
                 });
     }
 
+    private Mono<Post> savePostAndIncrementReputation(UserInfoDto user, String text, FilePart file) {
+        String link = bucketService.save(file);
+        Post post = buildPost(user.getId(), text, link);
+
+        return postRepository.save(post)
+                .flatMap(savedPost -> userRepository.updateReputation(user.getId(), 2L)
+                        .thenReturn(savedPost));
+    }
+
+    private Mono<Response> saveCommentAndIncrementReputation(UserInfoDto user, Post post, CommentSaveDto dto) {
+        Comment comment = buildComment(user, post.getId(), dto);
+
+        return commentRepository.save(comment)
+                .flatMap(savedComment -> userRepository.updateReputation(user.getId(), 1L)
+                        .then(Mono.just(Response.builder()
+                                .message("Comment successfully saved and reputation updated.")
+                                .status(HttpStatus.CREATED)
+                                .build())));
+    }
+
     private Comment buildComment(UserInfoDto user, long id, CommentSaveDto dto) {
         return Comment.builder()
                 .postId(id)
@@ -181,7 +190,6 @@ public class PostService {
                 .userId(post.getUserId())
                 .text(post.getText())
                 .photoLink(post.getPhotoLink())
-                .reputation(post.getReputation())
                 .build();
     }
 
