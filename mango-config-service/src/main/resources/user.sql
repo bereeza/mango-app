@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS vacancy
 (
     id           SERIAL PRIMARY KEY NOT NULL,
     user_id      INT                NOT NULL,
-    is_anonymous BOOLEAN   DEFAULT FALSE,
+    is_anonymous BOOLEAN DEFAULT FALSE,
     company_id   INT                NOT NULL,
     title        VARCHAR(255)       NOT NULL,
     description  VARCHAR(5000)      NOT NULL,
@@ -80,7 +80,6 @@ CREATE TABLE IF NOT EXISTS post
     user_id    INT                NOT NULL,
     text       VARCHAR(2000),
     photo_link VARCHAR(255),
-    reputation BIGINT DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
