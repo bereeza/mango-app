@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: company
+  config:
+    import:
+      - configserver:http://localhost:8888/user
+      - configserver:http://localhost:8888/redis

@@ -1,0 +1,21 @@
+server:
+  port: 1003
+  error:
+    include-binding-errors: always
+    include-message: always
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+      enabled: true
+
+gcp:
+  config:
+    file: gcp-config.json
+  project:
+    id: ${GCP_PROJECT_ID}
+  bucket:
+    id: ${GCP_BUCKET_ID}
+    dir: ${GCP_BUCKET_DIR}
