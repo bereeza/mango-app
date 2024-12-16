@@ -3,13 +3,12 @@ package com.mango.mangocompanyservice.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
 @Builder
+@Data
 @AllArgsConstructor
-@NoArgsConstructor
-public class PagePayload {
+public class SearchRequest {
+    private String name;
     private int page;
     private int size;
 }
