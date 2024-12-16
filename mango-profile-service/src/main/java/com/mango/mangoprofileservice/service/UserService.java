@@ -3,7 +3,6 @@ package com.mango.mangoprofileservice.service;
 import com.mango.mangoprofileservice.dto.Response;
 import com.mango.mangoprofileservice.dto.user.UserById;
 import com.mango.mangoprofileservice.dto.user.UserInfoDto;
-import com.mango.mangoprofileservice.dto.user.UserRedisInfo;
 import com.mango.mangoprofileservice.entity.User;
 import com.mango.mangoprofileservice.exception.UserNotFoundException;
 import com.mango.mangoprofileservice.repository.UserRepository;
@@ -11,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,13 +23,12 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 @Slf4j
 public class UserService {
-    private final ReactiveRedisTemplate<String, UserRedisInfo> redisTemplate;
     private final UserRepository userRepository;
-    private final TokenService tokenService;
     private final BucketService bucketService;
+    private final UserRedisService userRedisService;
 
     public Mono<UserInfoDto> getCurrentUser(ServerWebExchange exchange) {
-        return buildUser(exchange);
+        return userRedisService.buildUser(exchange);
     }
 
     public Mono<Response> deleteCurrentUser(ServerWebExchange exchange) {
@@ -138,42 +135,9 @@ public class UserService {
                 });
     }
 
-    private Mono<UserInfoDto> buildUser(ServerWebExchange exchange) {
-        return getUserInfoFromRedis(exchange)
-                .flatMap(user -> userRepository.findById(user.getId())
-                        .map(this::buildUserInfo))
-                .onErrorResume(e -> {
-                    log.error("User creation error {}", e.getMessage());
-                    return Mono.empty();
-                });
-    }
-
-    private Mono<UserRedisInfo> getUserInfoFromRedis(ServerWebExchange exchange) {
-        return tokenService.extractToken(exchange)
-                .flatMap(token -> redisTemplate.opsForValue().get(token))
-                .onErrorResume(e -> {
-                    log.error("Error getting current user from Redis: {}", e.getMessage());
-                    return Mono.empty();
-                });
-    }
-
     public UserById buildUserById(User user) {
         return UserById.builder()
                 .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .avatar(user.getAvatar())
-                .cv(user.getCv())
-                .about(user.getAbout())
-                .reputation(user.getReputation())
-                .link(user.getLink())
-                .build();
-    }
-
-    private UserInfoDto buildUserInfo(User user) {
-        return UserInfoDto.builder()
-                .id(user.getId())
-                .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .avatar(user.getAvatar())
