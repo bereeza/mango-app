@@ -6,7 +6,11 @@ import com.mango.mangocompanyservice.dto.company.CompanyInfoDto;
 import com.mango.mangocompanyservice.dto.company.CompanySaveDto;
 import com.mango.mangocompanyservice.dto.company.CompanySearchDto;
 import com.mango.mangocompanyservice.dto.company.CompanyUpdateDto;
+import com.mango.mangocompanyservice.dto.employee.EmployeeInfoDto;
+import com.mango.mangocompanyservice.dto.employee.EmployeeSaveDto;
+import com.mango.mangocompanyservice.dto.employee.PagePayload;
 import com.mango.mangocompanyservice.service.CompanyService;
+import com.mango.mangocompanyservice.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +26,7 @@ import reactor.core.publisher.Mono;
 public class CompanyController {
 
     private final CompanyService companyService;
+    private final EmployeeService employeeService;
 
     @PostMapping
     public Mono<Response> saveCompany(ServerWebExchange exchange,
@@ -57,8 +62,38 @@ public class CompanyController {
 
     @PatchMapping("/{id}/logo")
     public Mono<Response> updateLogo(ServerWebExchange exchange,
-                                            @PathVariable long id,
-                                            @ModelAttribute FilePart file) {
+                                     @PathVariable long id,
+                                     @ModelAttribute FilePart file) {
         return companyService.updateLogo(exchange, id, file);
+    }
+
+    @PostMapping("/{id}/employees")
+    public Mono<Response> saveEmployee(ServerWebExchange exchange,
+                                       @PathVariable long id,
+                                       @RequestBody EmployeeSaveDto dto) {
+        return employeeService.saveEmployee(exchange, id, dto);
+    }
+
+    @DeleteMapping("/{id}/employees/{userId}")
+    public Mono<Response> deleteEmployee(ServerWebExchange exchange,
+                                         @PathVariable long id,
+                                         @PathVariable long userId) {
+        return employeeService.deleteEmployee(exchange, id, userId);
+    }
+
+    @PatchMapping("/{id}/employees")
+    public Mono<Response> updateEmployeeRole(ServerWebExchange exchange,
+                                             @PathVariable long id,
+                                             @RequestBody EmployeeSaveDto dto) {
+        return employeeService.updateEmployeeRole(exchange, id, dto);
+    }
+
+    @PostMapping("/{id}/employees/all")
+    public Flux<EmployeeInfoDto> findCompanyEmployees(@PathVariable long id,
+                                                      @RequestBody PagePayload request) {
+        int page = request.getPage();
+        int size = request.getSize();
+        Pageable pageable = PageRequest.of(page, size);
+        return employeeService.findCompanyEmployees(id, pageable);
     }
 }
