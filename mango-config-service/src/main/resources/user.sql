@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS company_employees
     user_role  VARCHAR(255)       NOT NULL,
     first_name VARCHAR(64)        NOT NULL,
     last_name  VARCHAR(64)        NOT NULL,
+    avatar     VARCHAR(255)       NOT NULL,
     FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
