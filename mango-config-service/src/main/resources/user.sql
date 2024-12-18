@@ -52,7 +52,6 @@ CREATE TABLE IF NOT EXISTS vacancy
     location     VARCHAR(255),
     salary       DECIMAL(10, 2),
     created_at   TIMESTAMP,
-    closed_at    TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE
 );
@@ -73,7 +72,7 @@ CREATE TABLE IF NOT EXISTS vacancy_statistic
     id           SERIAL PRIMARY KEY NOT NULL,
     vacancy_id   INT UNIQUE         NOT NULL,
     views        BIGINT DEFAULT 0,
-    applications BIGINT DEFAULT 0,
+    applicants BIGINT DEFAULT 0,
     FOREIGN KEY (vacancy_id) REFERENCES vacancy (id) ON DELETE CASCADE
 );
 
