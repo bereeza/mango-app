@@ -44,13 +44,13 @@ CREATE TABLE IF NOT EXISTS vacancy
 (
     id           SERIAL PRIMARY KEY NOT NULL,
     user_id      INT                NOT NULL,
-    is_anonymous BOOLEAN DEFAULT FALSE,
+    is_anonymous BOOLEAN,
     company_id   INT                NOT NULL,
     title        VARCHAR(255)       NOT NULL,
     description  VARCHAR(5000)      NOT NULL,
     type         VARCHAR(15)        NOT NULL,
     location     VARCHAR(255),
-    salary       DECIMAL(10, 2),
+    salary       DECIMAL(20, 2),
     created_at   TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (company_id) REFERENCES company (id) ON DELETE CASCADE
