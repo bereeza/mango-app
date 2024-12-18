@@ -9,8 +9,12 @@ import com.mango.mangocompanyservice.dto.company.CompanyUpdateDto;
 import com.mango.mangocompanyservice.dto.employee.EmployeeInfoDto;
 import com.mango.mangocompanyservice.dto.employee.EmployeeSaveDto;
 import com.mango.mangocompanyservice.dto.employee.PagePayload;
+import com.mango.mangocompanyservice.dto.vacancy.VacancyInfoDto;
+import com.mango.mangocompanyservice.dto.vacancy.VacancySaveDto;
+import com.mango.mangocompanyservice.entity.Vacancy;
 import com.mango.mangocompanyservice.service.CompanyService;
 import com.mango.mangocompanyservice.service.EmployeeService;
+import com.mango.mangocompanyservice.service.VacancyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +31,7 @@ public class CompanyController {
 
     private final CompanyService companyService;
     private final EmployeeService employeeService;
+    private final VacancyService vacancyService;
 
     @PostMapping
     public Mono<Response> saveCompany(ServerWebExchange exchange,
@@ -95,5 +100,41 @@ public class CompanyController {
         int size = request.getSize();
         Pageable pageable = PageRequest.of(page, size);
         return employeeService.findCompanyEmployees(id, pageable);
+    }
+
+    @PostMapping("/{id}/vacancy")
+    public Mono<Response> saveVacancy(ServerWebExchange exchange,
+                                      @PathVariable long id,
+                                      @RequestBody VacancySaveDto dto) {
+        return vacancyService.saveVacancy(exchange, id, dto);
+    }
+
+    @PostMapping("/{id}/vacancy/all")
+    public Flux<VacancyInfoDto> findCompanyVacancies(@PathVariable long id,
+                                                     @RequestBody PagePayload request) {
+        int page = request.getPage();
+        int size = request.getSize();
+        Pageable pageable = PageRequest.of(page, size);
+        return vacancyService.findCompanyVacancies(id, pageable);
+    }
+
+    @DeleteMapping("/{id}/vacancy/{vacancyId}")
+    public Mono<Response> deleteVacancy(ServerWebExchange exchange,
+                                              @PathVariable long id,
+                                              @PathVariable long vacancyId) {
+        return vacancyService.deleteVacancy(exchange, id, vacancyId);
+    }
+
+    @GetMapping("/vacancy/{id}")
+    public Mono<Vacancy> findVacancy(@PathVariable long id) {
+        return vacancyService.findVacancy(id);
+    }
+
+    @PostMapping("/vacancy/all")
+    public Flux<Vacancy> findVacancies(@RequestBody SearchRequest request) {
+        int page = request.getPage();
+        int size = request.getSize();
+        Pageable pageable = PageRequest.of(page, size);
+        return vacancyService.findVacanciesBy(request.getName(), pageable);
     }
 }
