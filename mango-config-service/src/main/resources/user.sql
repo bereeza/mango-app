@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS vacancy_applicants
     vacancy_id       INT                NOT NULL,
     user_id          INT                NOT NULL,
     cover_letter     VARCHAR(100),
+    user_cv          VARCHAR(255)       NOT NULL,
     application_date TIMESTAMP,
     FOREIGN KEY (vacancy_id) REFERENCES vacancy (id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -69,9 +70,9 @@ CREATE TABLE IF NOT EXISTS vacancy_applicants
 
 CREATE TABLE IF NOT EXISTS vacancy_statistic
 (
-    id           SERIAL PRIMARY KEY NOT NULL,
-    vacancy_id   INT UNIQUE         NOT NULL,
-    views        BIGINT DEFAULT 0,
+    id         SERIAL PRIMARY KEY NOT NULL,
+    vacancy_id INT UNIQUE         NOT NULL,
+    views      BIGINT DEFAULT 0,
     applicants BIGINT DEFAULT 0,
     FOREIGN KEY (vacancy_id) REFERENCES vacancy (id) ON DELETE CASCADE
 );
