@@ -13,6 +13,7 @@ import com.mango.mangogatewayservice.utils.GravatarUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -63,13 +64,13 @@ public class UserService {
         return Mono.justOrEmpty(jwtProvider.extractToken(exchange))
                 .flatMap(token -> redisTemplate.delete(token)
                         .then(Mono.just(Response.<String>builder()
-                                .code(200)
+                                .code(HttpStatus.OK.value())
                                 .message("User signed out.")
                                 .body("User signed out.")
                                 .build()))
                 )
                 .onErrorResume(e -> Mono.just(Response.<String>builder()
-                        .code(500)
+                        .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
                         .message("Error during sign out.")
                         .body(e.getMessage())
                         .build()));
@@ -93,7 +94,7 @@ public class UserService {
 
         return saveUserToRedis(token, userInfo)
                 .then(Mono.just(Response.<String>builder()
-                        .code(200)
+                        .code(HttpStatus.OK.value())
                         .message("Registration was successful.")
                         .body(token)
                         .build())
