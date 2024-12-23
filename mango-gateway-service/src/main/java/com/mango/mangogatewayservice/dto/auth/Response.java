@@ -4,13 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.extern.jackson.Jacksonized;
 
-@Builder
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Jacksonized
-public class AuthResponse {
-    private String token;
+public class Response<T> {
+    private long code;
+    private String message;
+    private T body;
 }

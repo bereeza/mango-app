@@ -1,9 +1,9 @@
 package com.mango.mangogatewayservice.service;
 
+import com.mango.mangogatewayservice.dto.auth.Response;
 import com.mango.mangogatewayservice.dto.user.UserRedisInfo;
 import com.mango.mangogatewayservice.dto.user.UserSaveDto;
 import com.mango.mangogatewayservice.dto.auth.AuthRequest;
-import com.mango.mangogatewayservice.dto.auth.AuthResponse;
 import com.mango.mangogatewayservice.entity.User;
 import com.mango.mangogatewayservice.exception.UserAlreadyExistsException;
 import com.mango.mangogatewayservice.exception.UserNotFoundException;
@@ -30,58 +30,74 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ReactiveRedisTemplate<String, UserRedisInfo> redisTemplate;
 
-    public Mono<AuthResponse> findByEmail(AuthRequest req) {
+    public Mono<Response<String>> signIn(AuthRequest req) {
         return userRepository.findByEmail(req.getEmail())
                 .flatMap(user -> {
-                    if (passwordEncoder.matches(req.getPassword(), user.getPassword())) {
-                        return this.getAuthResponseMono(user);
-                    } else {
+                    if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
                         return Mono.error(new BadCredentialsException("Invalid credentials."));
                     }
+
+                    return this.getAuthResponseMono(user);
                 })
                 .switchIfEmpty(Mono.error(new UserNotFoundException("User not found.")));
     }
 
-    public Mono<AuthResponse> saveUser(UserSaveDto req) {
+    public Mono<Response<String>> signUp(UserSaveDto req) {
         return userRepository.findByEmail(req.getEmail())
                 .flatMap(existingUser -> Mono.error(new UserAlreadyExistsException("User already exists.")))
                 .then(Mono.defer(() -> {
                     User newUser = buildSavedUser(req);
                     String avatar = GravatarUtil.gravatar(newUser.getEmail());
                     newUser.setAvatar(avatar);
-                    
+
                     return userRepository.save(newUser)
                             .flatMap(this::getAuthResponseMono);
-                }));
+                }))
+                .onErrorResume(e -> {
+                    log.error("Incorrect input data: {}", e.getMessage());
+                    return Mono.error(new BadCredentialsException(e.getMessage()));
+                });
     }
 
-    public Mono<Void> signOut(ServerWebExchange exchange) {
+    public Mono<Response<String>> signOut(ServerWebExchange exchange) {
         return Mono.justOrEmpty(jwtProvider.extractToken(exchange))
                 .flatMap(token -> redisTemplate.delete(token)
-                        .doOnSuccess(deleted -> log.info("Token removed from Redis."))
-                        .then(Mono.just(token)))
-                .doOnTerminate(() -> log.info("User signed out.")).then();
+                        .then(Mono.just(Response.<String>builder()
+                                .code(200)
+                                .message("User signed out.")
+                                .body("User signed out.")
+                                .build()))
+                )
+                .onErrorResume(e -> Mono.just(Response.<String>builder()
+                        .code(500)
+                        .message("Error during sign out.")
+                        .body(e.getMessage())
+                        .build()));
     }
 
-    private Mono<AuthResponse> getAuthResponseMono(User user) {
+    private Mono<Response<String>> getAuthResponseMono(User user) {
         UserRedisInfo userInfo = UserRedisInfo.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .avatar(user.getAvatar())
+                .cv(user.getCv())
                 .build();
 
-        return getResponseMono(user, userInfo);
+        return getResponseMono(user.getEmail(), userInfo);
     }
 
-    private Mono<AuthResponse> getResponseMono(User savedUser, UserRedisInfo userInfo) {
-        String token = jwtProvider.createToken(savedUser.getEmail());
+    private Mono<Response<String>> getResponseMono(String email, UserRedisInfo userInfo) {
+        String token = jwtProvider.createToken(email);
 
         return saveUserToRedis(token, userInfo)
-                .then(Mono.just(AuthResponse.builder()
-                        .token(token)
-                        .build()));
+                .then(Mono.just(Response.<String>builder()
+                        .code(200)
+                        .message("Registration was successful.")
+                        .body(token)
+                        .build())
+                );
     }
 
     private Mono<Void> saveUserToRedis(String token, UserRedisInfo userInfoDto) {

@@ -13,6 +13,7 @@ import java.util.Date;
 @Slf4j
 @Component
 public class JwtProvider {
+
     @Value("${jwt.secret}")
     private String key;
     private static final String AUTH_HEADER = "Authorization";

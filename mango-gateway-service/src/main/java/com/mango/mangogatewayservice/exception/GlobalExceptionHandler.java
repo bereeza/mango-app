@@ -11,12 +11,13 @@ import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
+
+    @ExceptionHandler({UserAlreadyExistsException.class, BadCredentialsException.class})
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(RuntimeException ex) {
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
                 .code(HttpStatus.CONFLICT.value())
                 .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
                 .build();
 
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
@@ -25,22 +26,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex) {
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
                 .code(HttpStatus.NOT_FOUND.value())
                 .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
                 .build();
 
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentialException(BadCredentialsException ex) {
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .code(HttpStatus.UNAUTHORIZED.value())
-                .message("Bad credentials")
-                .build();
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 }
