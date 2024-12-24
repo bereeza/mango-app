@@ -17,4 +17,5 @@ public class UserRedisInfo implements Serializable {
     private String firstName;
     private String lastName;
     private String avatar;
+    private String cv;
 }

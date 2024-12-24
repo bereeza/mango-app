@@ -1,9 +1,11 @@
 package com.mango.mangoprofileservice.service;
 
 import com.mango.mangoprofileservice.dto.Response;
-import com.mango.mangoprofileservice.dto.user.UserById;
+import com.mango.mangoprofileservice.dto.user.UserByIdDto;
 import com.mango.mangoprofileservice.dto.user.UserInfoDto;
 import com.mango.mangoprofileservice.entity.User;
+import com.mango.mangoprofileservice.exception.BadRequestException;
+import com.mango.mangoprofileservice.exception.CVNotFoundException;
 import com.mango.mangoprofileservice.exception.UserNotFoundException;
 import com.mango.mangoprofileservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,68 +29,79 @@ public class UserService {
     private final BucketService bucketService;
     private final UserRedisService userRedisService;
 
+    private static final String PDF = ".pdf";
+
     public Mono<UserInfoDto> getCurrentUser(ServerWebExchange exchange) {
         return userRedisService.buildUser(exchange);
     }
 
-    public Mono<Response> deleteCurrentUser(ServerWebExchange exchange) {
+    public Mono<Response<String>> deleteCurrentUser(ServerWebExchange exchange) {
         return getCurrentUser(exchange)
-                .flatMap(this::deleteUserIfExists);
+                .flatMap(user -> userRedisService.deleteByToken(exchange)
+                        .then(deleteUserIfExists(user)));
     }
 
-    public Mono<UserById> getUserById(long id) {
+    public Mono<UserByIdDto> getUserById(long id) {
         return userRepository.findById(id)
                 .map(this::buildUserById)
                 .switchIfEmpty(Mono.error(new UserNotFoundException("User not found")));
     }
 
-    public Mono<Response> updateUserLinks(ServerWebExchange exchange, String link) {
+    public Mono<Response<String>> updateUserLink(ServerWebExchange exchange, String link) {
         return getCurrentUser(exchange)
                 .flatMap(currentUser ->
                         userRepository.updateLink(currentUser.getId(), link)
-                                .then(Mono.just(Response.builder()
+                                .then(Mono.just(Response.<String>builder()
+                                        .code(HttpStatus.OK.value())
                                         .message("Link updated successfully.")
-                                        .status(HttpStatus.OK)
+                                        .body(link)
                                         .build()))
                 )
                 .onErrorResume(e -> {
                     log.error("Error updating link: {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                    return Mono.error(new BadRequestException("Error updating link."));
                 });
     }
 
-    public Mono<Response> updateUserAboutSection(ServerWebExchange exchange, String about) {
+    public Mono<Response<String>> updateUserAboutSection(ServerWebExchange exchange, String about) {
         return getCurrentUser(exchange)
                 .flatMap(currentUser ->
                         userRepository.updateUserAbout(currentUser.getId(), about)
-                                .then(Mono.just(Response.builder()
+                                .then(Mono.just(Response.<String>builder()
+                                        .code(HttpStatus.OK.value())
                                         .message("About section updated successfully.")
-                                        .status(HttpStatus.OK)
+                                        .body(about)
                                         .build()))
                 )
                 .onErrorResume(e -> {
                     log.error("Error updating about section: {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                    return Mono.error(new BadRequestException("Error updating about section."));
                 });
     }
 
-    public Mono<Response> updateUserCV(ServerWebExchange exchange, FilePart file) {
+    public Mono<Response<String>> updateUserCV(ServerWebExchange exchange, FilePart file) {
         return getCurrentUser(exchange)
                 .flatMap(currentUser -> {
+                    long maxSize = 5 * 1024 * 1024;
+                    if (!file.filename().endsWith(PDF) && file.headers().getContentLength() > maxSize) {
+                        return Mono.error(new BadRequestException("Upload a PDF file up to 5 MB."));
+                    }
+
                     if (currentUser.getCv() != null) {
                         bucketService.dropFile(currentUser.getCv());
                     }
 
                     String link = bucketService.saveFile(currentUser.getId(), file);
                     return userRepository.updateUserCV(currentUser.getId(), link)
-                            .then(Mono.just(Response.builder()
-                                    .status(HttpStatus.OK)
+                            .then(Mono.just(Response.<String>builder()
+                                    .code(HttpStatus.OK.value())
                                     .message("CV successfully saved")
+                                    .body(link)
                                     .build()));
                 })
                 .onErrorResume(e -> {
                     log.error("Error updating file. {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                    return Mono.error(new BadRequestException("Error updating file."));
                 });
     }
 
@@ -99,7 +112,7 @@ public class UserService {
                     String url = user.getCv();
 
                     if (url == null || url.isEmpty()) {
-                        return Mono.error(new IllegalArgumentException("CV not found for user"));
+                        return Mono.error(new CVNotFoundException("CV not found."));
                     }
 
                     byte[] fileBytes = bucketService.getFile(url);
@@ -112,31 +125,29 @@ public class UserService {
                             .body(resource));
                 })
                 .onErrorResume(e -> {
-                    log.error("Error fetching CV. {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                    log.error("Error fetching CV: {}", e.getMessage());
+                    return Mono.error(new CVNotFoundException("Error fetching CV."));
                 });
     }
 
-    private Mono<Response> deleteUserIfExists(UserInfoDto userInfo) {
+    private Mono<Response<String>> deleteUserIfExists(UserInfoDto userInfo) {
         Long userId = userInfo.getId();
         return userRepository.existsById(userId)
-                .flatMap(exists -> exists ? deleteUser(userId) : Mono.error(new UserNotFoundException("Current user not found")));
+                .flatMap(exist -> exist ? deleteUser(userId) :
+                        Mono.error(new UserNotFoundException("Current user not found")));
     }
 
-    private Mono<Response> deleteUser(Long userId) {
+    private Mono<Response<String>> deleteUser(Long userId) {
         return userRepository.deleteById(userId)
-                .then(Mono.fromSupplier(() -> Response.builder()
+                .then(Mono.fromSupplier(() -> Response.<String>builder()
+                        .code(HttpStatus.OK.value())
                         .message("User deleted successfully.")
-                        .status(HttpStatus.NO_CONTENT)
-                        .build()))
-                .onErrorResume(e -> {
-                    log.error("User wasn't deleted.");
-                    return Mono.empty();
-                });
+                        .body("User deleted successfully.")
+                        .build()));
     }
 
-    public UserById buildUserById(User user) {
-        return UserById.builder()
+    public UserByIdDto buildUserById(User user) {
+        return UserByIdDto.builder()
                 .id(user.getId())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())

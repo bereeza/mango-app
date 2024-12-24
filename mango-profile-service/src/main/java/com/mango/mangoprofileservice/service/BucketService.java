@@ -22,6 +22,9 @@ public class BucketService {
 
     private final Storage storage;
 
+    @Value("${gcp.project.url}")
+    private String url;
+
     @Value("${gcp.bucket.id}")
     private String bucketName;
 
@@ -38,7 +41,7 @@ public class BucketService {
         BlobInfo blobInfo = createBlobInfo(blobId);
         Blob blob = storage.create(blobInfo, fileBytes);
 
-        return blob.getName();
+        return url + blob.getName();
     }
 
     @SneakyThrows

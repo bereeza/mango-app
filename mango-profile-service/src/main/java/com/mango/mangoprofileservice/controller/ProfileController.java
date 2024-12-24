@@ -2,7 +2,7 @@ package com.mango.mangoprofileservice.controller;
 
 import com.mango.mangoprofileservice.dto.user.UpdateRequest;
 import com.mango.mangoprofileservice.dto.Response;
-import com.mango.mangoprofileservice.dto.user.UserById;
+import com.mango.mangoprofileservice.dto.user.UserByIdDto;
 import com.mango.mangoprofileservice.service.UserService;
 import com.mango.mangoprofileservice.dto.user.UserInfoDto;
 import lombok.RequiredArgsConstructor;
@@ -26,34 +26,33 @@ public class ProfileController {
     }
 
     @DeleteMapping
-    public Mono<Response> deleteCurrentUser(ServerWebExchange exchange) {
+    public Mono<Response<String>> deleteCurrentUser(ServerWebExchange exchange) {
         return userService.deleteCurrentUser(exchange);
     }
 
     @GetMapping("/{id}")
-    public Mono<UserById> getUserById(@PathVariable long id) {
+    public Mono<UserByIdDto> getUserById(@PathVariable long id) {
         return userService.getUserById(id);
     }
 
-    @PutMapping("/update/link")
-    public Mono<Response> updateUserLinks(
+    @PatchMapping("/update/link")
+    public Mono<Response<String>> updateUserLink(
             ServerWebExchange exchange,
             @RequestBody UpdateRequest data) {
-        return userService.updateUserLinks(exchange, data.getData());
+        return userService.updateUserLink(exchange, data.getData());
     }
 
-    @PutMapping("/update/about")
-    public Mono<Response> updateUserAboutSection(
+    @PatchMapping("/update/about")
+    public Mono<Response<String>> updateUserAbout(
             ServerWebExchange exchange,
             @RequestBody UpdateRequest data) {
         return userService.updateUserAboutSection(exchange, data.getData());
     }
 
-    @PostMapping(value = "/update/cv")
-    public Mono<Response> updateUserCV(
+    @PatchMapping(value = "/update/cv")
+    public Mono<Response<String>> updateUserCV(
             ServerWebExchange exchange,
             @RequestPart("file") FilePart file) {
-
         return userService.updateUserCV(exchange, file);
     }
 

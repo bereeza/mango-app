@@ -11,14 +11,16 @@ public interface UserRepository extends ReactiveCrudRepository<User, Long> {
     @Modifying
     @Transactional
     @Query("UPDATE mango.users SET link = :link WHERE id = :id")
-    Mono<Void> updateLink(Long id, String link);
+    Mono<Integer> updateLink(Long id, String link);
 
     @Modifying
+    @Transactional
     @Query("UPDATE mango.users SET about = :about WHERE id = :id")
-    Mono<Void> updateUserAbout(Long id, String about);
+    Mono<Integer> updateUserAbout(Long id, String about);
 
     @Modifying
+    @Transactional
     @Query("UPDATE mango.users SET cv = :about WHERE id = :id")
-    Mono<Void> updateUserCV(Long id, String cv);
+    Mono<Integer> updateUserCV(Long id, String cv);
 }
 

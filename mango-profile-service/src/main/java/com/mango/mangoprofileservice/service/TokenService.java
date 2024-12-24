@@ -8,9 +8,7 @@ import reactor.core.publisher.Mono;
 @Service
 public class TokenService {
     public Mono<String> extractToken(ServerWebExchange exchange) {
-        return Mono.justOrEmpty(
-                        exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION)
-                )
+        return Mono.justOrEmpty(exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION))
                 .map(authHeader -> authHeader.replace("Bearer ", ""));
     }
 }

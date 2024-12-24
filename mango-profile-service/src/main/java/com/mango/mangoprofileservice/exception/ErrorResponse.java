@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Jacksonized
 public class ErrorResponse {
-    private LocalDateTime timestamp;
     private int code;
     private String message;
+    private LocalDateTime timestamp;
 }

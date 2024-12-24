@@ -3,6 +3,8 @@ package com.mango.mangoprofileservice.service;
 import com.mango.mangoprofileservice.dto.user.UserInfoDto;
 import com.mango.mangoprofileservice.dto.user.UserRedisInfo;
 import com.mango.mangoprofileservice.entity.User;
+import com.mango.mangoprofileservice.exception.TokenNotFoundException;
+import com.mango.mangoprofileservice.exception.UnauthorizedUserException;
 import com.mango.mangoprofileservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,18 +26,23 @@ public class UserRedisService {
                 .flatMap(user -> userRepository.findById(user.getId())
                         .map(this::buildUserInfo))
                 .onErrorResume(e -> {
-                    log.error("User creation error {}", e.getMessage());
-                    return Mono.empty();
+                    log.error("Error getting current user from Redis: {}", e.getMessage());
+                    return Mono.error(new UnauthorizedUserException("Error getting current user from Redis."));
                 });
+    }
+
+    public Mono<Long> deleteByToken(ServerWebExchange exchange) {
+        return tokenService.extractToken(exchange)
+                .flatMap(token -> {
+                    log.info("User token deleted successfully.");
+                    return redisTemplate.delete(token);
+                }).switchIfEmpty(Mono.error(new TokenNotFoundException("Token not found.")));
     }
 
     private Mono<UserRedisInfo> getUserInfoFromRedis(ServerWebExchange exchange) {
         return tokenService.extractToken(exchange)
                 .flatMap(token -> redisTemplate.opsForValue().get(token))
-                .onErrorResume(e -> {
-                    log.error("Error getting current user from Redis: {}", e.getMessage());
-                    return Mono.empty();
-                });
+                .switchIfEmpty(Mono.error(new UnauthorizedUserException("Error getting current user from Redis.")));
     }
 
     private UserInfoDto buildUserInfo(User user) {
