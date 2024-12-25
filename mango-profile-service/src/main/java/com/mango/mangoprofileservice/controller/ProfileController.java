@@ -49,7 +49,7 @@ public class ProfileController {
         return userService.updateUserAboutSection(exchange, data.getData());
     }
 
-    @PatchMapping(value = "/update/cv")
+    @PatchMapping("/update/cv")
     public Mono<Response<String>> updateUserCV(
             ServerWebExchange exchange,
             @RequestPart("file") FilePart file) {

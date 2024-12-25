@@ -91,13 +91,13 @@ public class UserService {
                         bucketService.dropFile(currentUser.getCv());
                     }
 
-                    String link = bucketService.saveFile(currentUser.getId(), file);
-                    return userRepository.updateUserCV(currentUser.getId(), link)
-                            .then(Mono.just(Response.<String>builder()
-                                    .code(HttpStatus.OK.value())
-                                    .message("CV successfully saved")
-                                    .body(link)
-                                    .build()));
+                    return bucketService.saveFile(currentUser.getId(), file)
+                            .flatMap(link -> userRepository.updateUserCV(currentUser.getId(), link)
+                                    .then(Mono.just(Response.<String>builder()
+                                            .code(HttpStatus.OK.value())
+                                            .message("CV successfully saved")
+                                            .body(link)
+                                            .build())));
                 })
                 .onErrorResume(e -> {
                     log.error("Error updating file. {}", e.getMessage());

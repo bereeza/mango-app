@@ -15,7 +15,6 @@ gcp:
   config:
     file: gcp-config.json
   project:
-    url: ${GCP_PROJECT_URL}
     id: ${GCP_PROJECT_ID}
   bucket:
     id: ${GCP_BUCKET_ID}
