@@ -6,9 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
-@Builder
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class PostInfoDto implements Serializable {
@@ -16,4 +17,5 @@ public class PostInfoDto implements Serializable {
     private long userId;
     private String text;
     private String photoLink;
+    private LocalDateTime createdAt;
 }

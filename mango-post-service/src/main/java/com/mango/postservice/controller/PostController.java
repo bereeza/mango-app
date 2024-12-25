@@ -5,15 +5,13 @@ import com.mango.postservice.dto.comment.CommentSaveDto;
 import com.mango.postservice.dto.post.PostInfoDto;
 import com.mango.postservice.dto.post.PostSaveDto;
 import com.mango.postservice.dto.Response;
-import com.mango.postservice.dto.post.PostTextUpdate;
+import com.mango.postservice.dto.post.PostTextUpdateDto;
 import com.mango.postservice.entity.Comment;
-import com.mango.postservice.entity.Post;
 import com.mango.postservice.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
@@ -27,8 +25,8 @@ public class PostController {
 
     private final PostService postService;
 
-    @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public Mono<Response> savePost(ServerWebExchange exchange,
+    @PostMapping
+    public Mono<Response<String>> savePost(ServerWebExchange exchange,
                                    @ModelAttribute PostSaveDto post) {
         return postService.savePost(exchange, post.getText(), post.getFile());
     }
@@ -39,20 +37,20 @@ public class PostController {
     }
 
     @DeleteMapping("/{id}")
-    public Mono<Response> deletePost(ServerWebExchange exchange,
+    public Mono<Response<String>> deletePost(ServerWebExchange exchange,
                                      @PathVariable long id) {
         return postService.deletePost(exchange, id);
     }
 
     @PatchMapping("/{id}")
-    public Mono<Response> updatePost(ServerWebExchange exchange,
+    public Mono<Response<String>> updatePost(ServerWebExchange exchange,
                                      @PathVariable long id,
-                                     @RequestBody PostTextUpdate text) {
+                                     @RequestBody PostTextUpdateDto text) {
         return postService.updatePost(exchange, id, text.getText());
     }
 
-    @PostMapping
-    public Flux<Post> findPosts(@RequestBody PagePayload request) {
+    @PostMapping("/all")
+    public Flux<PostInfoDto> findPosts(@RequestBody PagePayload request) {
         int page = request.getPage();
         int size = request.getSize();
         Pageable pageable = PageRequest.of(page, size);
@@ -60,14 +58,14 @@ public class PostController {
     }
 
     @PostMapping("/{id}/comment")
-    public Mono<Response> saveComment(ServerWebExchange exchange,
+    public Mono<Response<String>> saveComment(ServerWebExchange exchange,
                                       @PathVariable long id,
                                       @RequestBody CommentSaveDto comment) {
         return postService.saveComment(exchange, id, comment);
     }
 
     @DeleteMapping("/{id}/comment/{commentId}")
-    public Mono<Response> deleteComment(ServerWebExchange exchange,
+    public Mono<Response<String>> deleteComment(ServerWebExchange exchange,
                                         @PathVariable long id,
                                         @PathVariable long commentId) {
         return postService.deleteComment(exchange, id, commentId);

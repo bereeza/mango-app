@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
-@Builder
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserRedisInfo implements Serializable {
@@ -17,4 +17,5 @@ public class UserRedisInfo implements Serializable {
     private String firstName;
     private String lastName;
     private String avatar;
+    private String cv;
 }

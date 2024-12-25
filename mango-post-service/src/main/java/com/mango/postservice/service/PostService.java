@@ -6,6 +6,8 @@ import com.mango.postservice.dto.Response;
 import com.mango.postservice.dto.user.UserInfoDto;
 import com.mango.postservice.entity.Comment;
 import com.mango.postservice.entity.Post;
+import com.mango.postservice.exception.AccessForbiddenException;
+import com.mango.postservice.exception.BadRequestException;
 import com.mango.postservice.exception.CommentNotFoundException;
 import com.mango.postservice.exception.PostNotFoundException;
 import com.mango.postservice.repository.CommentRepository;
@@ -33,16 +35,17 @@ public class PostService {
     private final UserRedisService userRedisService;
     private final UserRepository userRepository;
 
-    public Mono<Response> savePost(ServerWebExchange exchange, String text, FilePart file) {
+    public Mono<Response<String>> savePost(ServerWebExchange exchange, String text, FilePart file) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> savePostAndIncrementReputation(user, text, file))
-                .map(savedPost -> Response.builder()
-                        .message("Post successfully saved and reputation updated")
-                        .status(HttpStatus.CREATED)
+                .map(post -> Response.<String>builder()
+                        .code(HttpStatus.OK.value())
+                        .message("Post successfully saved.")
+                        .body("Post successfully saved.")
                         .build())
                 .onErrorResume(e -> {
                     log.error("Post wasn't saved: {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                    return Mono.error(new BadRequestException(e.getMessage()));
                 });
     }
 
@@ -52,64 +55,62 @@ public class PostService {
                 .switchIfEmpty(Mono.error(new PostNotFoundException("Post not found.")));
     }
 
-    public Mono<Response> deletePost(ServerWebExchange exchange, long id) {
+    public Mono<Response<String>> deletePost(ServerWebExchange exchange, long id) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> postRepository.findById(id)
                         .flatMap(post -> {
                             if (user.getId() != post.getUserId()) {
                                 log.error("You cannot delete other users' posts.");
-                                return Mono.error(new IllegalArgumentException("You cannot delete other users' posts."));
+                                return Mono.error(new AccessForbiddenException("You cannot delete other users' posts."));
                             }
 
-                            bucketService.delete(post.getPhotoLink());
+                            bucketService.dropFile(post.getPhotoLink());
 
                             return postRepository.deleteById(id)
-                                    .then(Mono.just(Response.builder()
-                                            .status(HttpStatus.OK)
+                                    .then(Mono.just(Response.<String>builder()
+                                            .code(HttpStatus.NO_CONTENT.value())
                                             .message("Post deleted successfully.")
+                                            .body("Post deleted successfully.")
                                             .build()));
                         })
-                        .switchIfEmpty(Mono.error(new PostNotFoundException("Post not found.")))
-                )
-                .onErrorResume(e -> {
-                    log.error("Post wasn't deleted: {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException(e.getMessage()));
-                });
+                        .switchIfEmpty(Mono.error(new PostNotFoundException("Post not found."))))
+                .onErrorResume(e -> Mono.error(new AccessForbiddenException(e.getMessage())))
+                .onErrorResume(e -> Mono.error(new PostNotFoundException(e.getMessage())));
     }
 
-    public Mono<Response> updatePost(ServerWebExchange exchange,
-                                     long id,
-                                     String text) {
+    public Mono<Response<String>> updatePost(ServerWebExchange exchange,
+                                             long id,
+                                             String text) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> postRepository.findById(id)
                         .flatMap(post -> {
                             if (user.getId() != post.getUserId()) {
                                 log.error("You cannot update other users' posts.");
-                                return Mono.error(new IllegalArgumentException("You cannot update other users' posts."));
+                                return Mono.error(new AccessForbiddenException("You cannot update other users' posts."));
                             }
 
                             return postRepository.updateText(post.getId(), text)
-                                    .then(Mono.just(Response.builder()
+                                    .then(Mono.just(Response.<String>builder()
+                                            .code(HttpStatus.OK.value())
                                             .message("Post updated successfully.")
-                                            .status(HttpStatus.OK)
+                                            .body("Post updated successfully.")
                                             .build()));
 
-                        }))
-                .onErrorResume(e -> {
-                    log.error("Post not found: {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException("Post not found"));
-                });
+                        })
+                        .switchIfEmpty(Mono.error(new PostNotFoundException("Post not found."))))
+                .onErrorResume(e -> Mono.error(new AccessForbiddenException(e.getMessage())))
+                .onErrorResume(e -> Mono.error(new PostNotFoundException(e.getMessage())));
     }
 
-    public Flux<Post> findAll(Pageable pageable) {
+    public Flux<PostInfoDto> findAll(Pageable pageable) {
         return postRepository.findAllBy(pageable)
                 .onErrorResume(e -> {
-                    log.error("Something went wrong: {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                    log.error("Bad request: {}", e.getMessage());
+                    return Mono.error(new BadRequestException(e.getMessage()));
                 });
     }
 
-    public Mono<Response> saveComment(ServerWebExchange exchange, long id, CommentSaveDto dto) {
+    public Mono<Response<String>> saveComment(ServerWebExchange exchange, long id, CommentSaveDto dto) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> postRepository.findById(id)
                         .flatMap(post -> saveCommentAndIncrementReputation(user, post, dto))
@@ -120,7 +121,7 @@ public class PostService {
                 });
     }
 
-    public Mono<Response> deleteComment(ServerWebExchange exchange, long id, long commentId) {
+    public Mono<Response<String>> deleteComment(ServerWebExchange exchange, long id, long commentId) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> postRepository.findById(id)
                         .flatMap(post -> commentRepository.findById(commentId)
@@ -130,9 +131,8 @@ public class PostService {
                                     }
 
                                     return commentRepository.deleteById(commentId)
-                                            .then(Mono.just(Response.builder()
+                                            .then(Mono.just(Response.<String>builder()
                                                     .message("Comment deleted successfully.")
-                                                    .status(HttpStatus.NO_CONTENT)
                                                     .build()));
                                 })
                                 .switchIfEmpty(Mono.error(new CommentNotFoundException("Comment not found.")))
@@ -154,22 +154,29 @@ public class PostService {
     }
 
     private Mono<Post> savePostAndIncrementReputation(UserInfoDto user, String text, FilePart file) {
-        String link = bucketService.save(file);
-        Post post = buildPost(user.getId(), text, link);
+        long maxSize = 5 * 1024 * 1024;
 
-        return postRepository.save(post)
-                .flatMap(savedPost -> userRepository.updateReputation(user.getId(), 2L)
-                        .thenReturn(savedPost));
+        if (!file.filename().matches(".*\\.(png|jpg|jpeg|webp)$") || file.headers().getContentLength() > maxSize) {
+            return Mono.error(new BadRequestException("Upload an image file (PNG, JPG, WEBP) up to 5 MB."));
+        }
+
+        return bucketService.saveFile(file)
+                .flatMap(link -> {
+                    Post post = buildPost(user.getId(), text, link);
+
+                    return postRepository.save(post)
+                            .flatMap(savedPost ->
+                                    userRepository.updateReputation(user.getId(), 2L).thenReturn(savedPost));
+                });
     }
 
-    private Mono<Response> saveCommentAndIncrementReputation(UserInfoDto user, Post post, CommentSaveDto dto) {
+    private Mono<Response<String>> saveCommentAndIncrementReputation(UserInfoDto user, Post post, CommentSaveDto dto) {
         Comment comment = buildComment(user, post.getId(), dto);
 
         return commentRepository.save(comment)
                 .flatMap(savedComment -> userRepository.updateReputation(user.getId(), 1L)
-                        .then(Mono.just(Response.builder()
+                        .then(Mono.just(Response.<String>builder()
                                 .message("Comment successfully saved and reputation updated.")
-                                .status(HttpStatus.CREATED)
                                 .build())));
     }
 
@@ -190,6 +197,7 @@ public class PostService {
                 .userId(post.getUserId())
                 .text(post.getText())
                 .photoLink(post.getPhotoLink())
+                .createdAt(post.getCreatedAt())
                 .build();
     }
 
@@ -198,6 +206,7 @@ public class PostService {
                 .userId(id)
                 .photoLink(link)
                 .text(text)
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 }

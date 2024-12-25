@@ -3,6 +3,7 @@ package com.mango.postservice.service;
 import com.mango.postservice.dto.user.UserInfoDto;
 import com.mango.postservice.dto.user.UserRedisInfo;
 import com.mango.postservice.entity.User;
+import com.mango.postservice.exception.UnauthorizedUserException;
 import com.mango.postservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,18 +25,15 @@ public class UserRedisService {
                 .flatMap(user -> userRepository.findById(user.getId())
                         .map(this::buildUserInfo))
                 .onErrorResume(e -> {
-                    log.error("User building error: {}", e.getMessage());
-                    return Mono.empty();
+                    log.error("Error getting current user from Redis: {}", e.getMessage());
+                    return Mono.error(new UnauthorizedUserException("Error getting current user from Redis."));
                 });
     }
 
     private Mono<UserRedisInfo> getUserInfoFromRedis(ServerWebExchange exchange) {
         return tokenService.extractToken(exchange)
                 .flatMap(token -> redisTemplate.opsForValue().get(token))
-                .onErrorResume(e -> {
-                    log.error("Error getting current user from Redis: {}", e.getMessage());
-                    return Mono.empty();
-                });
+                .switchIfEmpty(Mono.error(new UnauthorizedUserException("Error getting current user from Redis.")));
     }
 
     private UserInfoDto buildUserInfo(User user) {

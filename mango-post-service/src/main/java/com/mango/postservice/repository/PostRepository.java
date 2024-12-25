@@ -1,5 +1,6 @@
 package com.mango.postservice.repository;
 
+import com.mango.postservice.dto.post.PostInfoDto;
 import com.mango.postservice.entity.Post;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.r2dbc.repository.Modifying;
@@ -13,7 +14,14 @@ public interface PostRepository extends ReactiveCrudRepository<Post, Long> {
     @Modifying
     @Transactional
     @Query("UPDATE mango.post SET text = :text WHERE id = :id")
-    Mono<Void> updateText(Long id, String text);
+    Mono<Integer> updateText(Long id, String text);
 
-    Flux<Post> findAllBy(Pageable pageable);
+    @Transactional(readOnly = true)
+    @Query("""
+            SELECT *
+            FROM mango.post
+            ORDER BY created_at
+            LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
+            """)
+    Flux<PostInfoDto> findAllBy(Pageable pageable);
 }
