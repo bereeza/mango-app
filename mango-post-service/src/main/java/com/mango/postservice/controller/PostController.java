@@ -1,12 +1,13 @@
 package com.mango.postservice.controller;
 
-import com.mango.postservice.dto.PagePayload;
+import com.mango.postservice.dto.SearchRequest;
+import com.mango.postservice.dto.comment.CommentInfoDto;
 import com.mango.postservice.dto.comment.CommentSaveDto;
 import com.mango.postservice.dto.post.PostInfoDto;
 import com.mango.postservice.dto.post.PostSaveDto;
 import com.mango.postservice.dto.Response;
+import com.mango.postservice.dto.post.PostShortInfoDto;
 import com.mango.postservice.dto.post.PostTextUpdateDto;
-import com.mango.postservice.entity.Comment;
 import com.mango.postservice.service.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,11 +51,33 @@ public class PostController {
     }
 
     @PostMapping("/all")
-    public Flux<PostInfoDto> findPosts(@RequestBody PagePayload request) {
+    public Flux<PostInfoDto> findAllPosts(@RequestBody SearchRequest request) {
         int page = request.getPage();
         int size = request.getSize();
         Pageable pageable = PageRequest.of(page, size);
-        return postService.findAll(pageable);
+        return postService.findAllPosts(pageable);
+    }
+
+    @PostMapping("/all/filter")
+    public Flux<PostInfoDto> findAllByText(@RequestBody SearchRequest request) {
+        int page = request.getPage();
+        int size = request.getSize();
+        Pageable pageable = PageRequest.of(page, size);
+        return postService.findAllByText(pageable, request.getText());
+    }
+
+    @PostMapping("/{id}/all")
+    public Flux<PostInfoDto> findAllUserPosts(@PathVariable long id,
+                                              @RequestBody SearchRequest request) {
+        int page = request.getPage();
+        int size = request.getSize();
+        Pageable pageable = PageRequest.of(page, size);
+        return postService.findAllUserPosts(pageable, id);
+    }
+
+    @GetMapping("/top")
+    public Flux<PostShortInfoDto> findTopPostsByComments() {
+        return postService.findTopPostsByComments();
     }
 
     @PostMapping("/{id}/comment")
@@ -72,8 +95,8 @@ public class PostController {
     }
 
     @PostMapping("/{id}/comment/all")
-    public Flux<Comment> findComments(@PathVariable long id,
-                                      @RequestBody PagePayload request) {
+    public Flux<CommentInfoDto> findComments(@PathVariable long id,
+                                             @RequestBody SearchRequest request) {
         int page = request.getPage();
         int size = request.getSize();
         Pageable pageable = PageRequest.of(page, size);

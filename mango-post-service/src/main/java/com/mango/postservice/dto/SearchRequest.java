@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class PagePayload {
+public class SearchRequest {
+    private String text;
     private int page;
     private int size;
 }

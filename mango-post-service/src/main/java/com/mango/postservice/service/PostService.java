@@ -1,8 +1,10 @@
 package com.mango.postservice.service;
 
+import com.mango.postservice.dto.comment.CommentInfoDto;
 import com.mango.postservice.dto.comment.CommentSaveDto;
 import com.mango.postservice.dto.post.PostInfoDto;
 import com.mango.postservice.dto.Response;
+import com.mango.postservice.dto.post.PostShortInfoDto;
 import com.mango.postservice.dto.user.UserInfoDto;
 import com.mango.postservice.entity.Comment;
 import com.mango.postservice.entity.Post;
@@ -74,8 +76,7 @@ public class PostService {
                                             .build()));
                         })
                         .switchIfEmpty(Mono.error(new PostNotFoundException("Post not found."))))
-                .onErrorResume(e -> Mono.error(new AccessForbiddenException(e.getMessage())))
-                .onErrorResume(e -> Mono.error(new PostNotFoundException(e.getMessage())));
+                .onErrorResume(e -> Mono.error(new AccessForbiddenException(e.getMessage())));
     }
 
     public Mono<Response<String>> updatePost(ServerWebExchange exchange,
@@ -98,16 +99,30 @@ public class PostService {
 
                         })
                         .switchIfEmpty(Mono.error(new PostNotFoundException("Post not found."))))
-                .onErrorResume(e -> Mono.error(new AccessForbiddenException(e.getMessage())))
-                .onErrorResume(e -> Mono.error(new PostNotFoundException(e.getMessage())));
+                .onErrorResume(e -> Mono.error(new AccessForbiddenException(e.getMessage())));
     }
 
-    public Flux<PostInfoDto> findAll(Pageable pageable) {
-        return postRepository.findAllBy(pageable)
+    public Flux<PostInfoDto> findAllPosts(Pageable pageable) {
+        return postRepository.findAllPosts(pageable)
                 .onErrorResume(e -> {
                     log.error("Bad request: {}", e.getMessage());
                     return Mono.error(new BadRequestException(e.getMessage()));
                 });
+    }
+
+    public Flux<PostInfoDto> findAllUserPosts(Pageable pageable, long id) {
+        return postRepository.findAllUserPosts(pageable, id)
+                .switchIfEmpty(Flux.empty());
+    }
+
+    public Flux<PostInfoDto> findAllByText(Pageable pageable, String text) {
+        return postRepository.findAllByText(pageable, text)
+                .switchIfEmpty(Flux.empty());
+    }
+
+    public Flux<PostShortInfoDto> findTopPostsByComments() {
+        return postRepository.findTopPostsByComments()
+                .switchIfEmpty(Flux.empty());
     }
 
     public Mono<Response<String>> saveComment(ServerWebExchange exchange, long id, CommentSaveDto dto) {
@@ -115,10 +130,7 @@ public class PostService {
                 .flatMap(user -> postRepository.findById(id)
                         .flatMap(post -> saveCommentAndIncrementReputation(user, post, dto))
                         .switchIfEmpty(Mono.error(new PostNotFoundException("Post not found."))))
-                .onErrorResume(e -> {
-                    log.error("Error saving comment: {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException(e.getMessage()));
-                });
+                .onErrorResume(e -> Mono.error(new PostNotFoundException(e.getMessage())));
     }
 
     public Mono<Response<String>> deleteComment(ServerWebExchange exchange, long id, long commentId) {
@@ -127,29 +139,28 @@ public class PostService {
                         .flatMap(post -> commentRepository.findById(commentId)
                                 .flatMap(comment -> {
                                     if (user.getId() != post.getUserId()) {
-                                        return Mono.error(new IllegalAccessException("You don't have permission."));
+                                        return Mono.error(new AccessForbiddenException("You don't have permission."));
                                     }
 
                                     return commentRepository.deleteById(commentId)
                                             .then(Mono.just(Response.<String>builder()
+                                                    .code(HttpStatus.OK.value())
                                                     .message("Comment deleted successfully.")
+                                                    .body("Comment deleted successfully.")
                                                     .build()));
                                 })
                                 .switchIfEmpty(Mono.error(new CommentNotFoundException("Comment not found.")))
                         )
                         .switchIfEmpty(Mono.error(new PostNotFoundException("Post not found.")))
                 )
-                .onErrorResume(e -> {
-                    log.error("Error occurred: {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException(e.getMessage()));
-                });
+                .onErrorResume(e -> Mono.error(new PostNotFoundException(e.getMessage())));
     }
 
-    public Flux<Comment> findAll(long postId, Pageable pageable) {
+    public Flux<CommentInfoDto> findAll(long postId, Pageable pageable) {
         return commentRepository.findAllBy(postId, pageable)
                 .onErrorResume(e -> {
-                    log.error("Something went wrong: {}", e.getMessage());
-                    return Mono.error(new IllegalArgumentException(e.getMessage()));
+                    log.error("Post not found: {}", e.getMessage());
+                    return Mono.error(new PostNotFoundException(e.getMessage()));
                 });
     }
 
@@ -170,13 +181,17 @@ public class PostService {
                 });
     }
 
-    private Mono<Response<String>> saveCommentAndIncrementReputation(UserInfoDto user, Post post, CommentSaveDto dto) {
+    private Mono<Response<String>> saveCommentAndIncrementReputation(UserInfoDto user,
+                                                                     Post post,
+                                                                     CommentSaveDto dto) {
         Comment comment = buildComment(user, post.getId(), dto);
 
         return commentRepository.save(comment)
                 .flatMap(savedComment -> userRepository.updateReputation(user.getId(), 1L)
                         .then(Mono.just(Response.<String>builder()
+                                .code(HttpStatus.OK.value())
                                 .message("Comment successfully saved and reputation updated.")
+                                .body(dto.getComment())
                                 .build())));
     }
 
