@@ -17,6 +17,7 @@ public class VacancyInfoDto {
     private long id;
     private long userId;
     private boolean isAnonymous;
+    private long companyId;
     private String title;
     private String description;
     private Type type;

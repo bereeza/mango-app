@@ -12,6 +12,9 @@ import reactor.core.publisher.Mono;
 
 public interface EmployeeRepository extends ReactiveCrudRepository<Employee, Long> {
 
+    @Transactional(readOnly = true)
+    Mono<Employee> findByCompanyIdAndEmail(long companyId, String email);
+
     @Modifying
     @Transactional
     @Query("""
@@ -27,7 +30,7 @@ public interface EmployeeRepository extends ReactiveCrudRepository<Employee, Lon
             DELETE FROM mango.company_employees
             WHERE user_id = :userId
             """)
-    Mono<Void> deleteByUserId(long userId);
+    Mono<Integer> deleteByUserId(long userId);
 
     @Transactional(readOnly = true)
     @Query("""

@@ -1,16 +1,14 @@
-package com.mango.mangocompanyservice.dto;
+package com.mango.mangocompanyservice.dto.vacancy;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
 @Builder
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Response<T> {
-    private int code;
-    private String message;
-    private T body;
+public class VacancyApplyDto {
+    private String coverLetter;
 }

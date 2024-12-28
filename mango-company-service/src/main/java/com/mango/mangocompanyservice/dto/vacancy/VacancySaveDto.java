@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VacancySaveDto {
-    private boolean isAnonymous;
+    private Boolean isAnonymous;
     private String title;
     private String description;
     private Type type;

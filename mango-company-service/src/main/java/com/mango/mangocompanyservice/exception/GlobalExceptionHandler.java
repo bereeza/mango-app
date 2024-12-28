@@ -2,7 +2,6 @@ package com.mango.mangocompanyservice.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.reactive.result.method.annotation.ResponseEntityExceptionHandler;
@@ -23,30 +22,41 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentialException(BadCredentialsException ex) {
+    @ExceptionHandler({BadRequestException.class})
+    public ResponseEntity<ErrorResponse> handleBadCredentialException(BadRequestException ex) {
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .code(HttpStatus.UNAUTHORIZED.value())
+                .code(HttpStatus.BAD_REQUEST.value())
                 .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
                 .build();
 
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler({IllegalArgumentException.class})
-    public ResponseEntity<ErrorResponse> handleBadCredentialException(IllegalArgumentException ex) {
+    @ExceptionHandler({UserAlreadyEmployeeException.class})
+    public ResponseEntity<ErrorResponse> handleUserAlreadyEmployeeException(UserAlreadyEmployeeException ex) {
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .code(HttpStatus.CONFLICT.value())
+                .code(HttpStatus.CONTINUE.value())
                 .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
                 .build();
 
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
-    @ExceptionHandler({NotEmployeeException.class})
-    public ResponseEntity<ErrorResponse> handleNotEmployeeException(NotEmployeeException ex) {
+    @ExceptionHandler(UnauthorizedUserException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedUserException(UnauthorizedUserException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .code(HttpStatus.UNAUTHORIZED.value())
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler({AccessForbiddenException.class})
+    public ResponseEntity<ErrorResponse> handleNotEmployeeException(AccessForbiddenException ex) {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .code(HttpStatus.FORBIDDEN.value())

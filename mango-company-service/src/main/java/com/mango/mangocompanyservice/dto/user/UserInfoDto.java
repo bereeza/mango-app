@@ -13,9 +13,10 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class UserInfoDto implements Serializable {
     private long id;
+    private String email;
     private String firstName;
     private String lastName;
     private String avatar;
-    private String reputation;
+    private String cv;
 }
 

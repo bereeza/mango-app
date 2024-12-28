@@ -11,7 +11,6 @@ import com.mango.mangocompanyservice.dto.employee.EmployeeSaveDto;
 import com.mango.mangocompanyservice.dto.employee.PagePayload;
 import com.mango.mangocompanyservice.dto.vacancy.VacancyInfoDto;
 import com.mango.mangocompanyservice.dto.vacancy.VacancySaveDto;
-import com.mango.mangocompanyservice.entity.Vacancy;
 import com.mango.mangocompanyservice.service.CompanyService;
 import com.mango.mangocompanyservice.service.EmployeeService;
 import com.mango.mangocompanyservice.service.VacancyService;
@@ -34,8 +33,8 @@ public class CompanyController {
     private final VacancyService vacancyService;
 
     @PostMapping
-    public Mono<Response> saveCompany(ServerWebExchange exchange,
-                                      @RequestBody CompanySaveDto dto) {
+    public Mono<Response<String>> saveCompany(ServerWebExchange exchange,
+                                              @RequestBody CompanySaveDto dto) {
         return companyService.saveCompany(exchange, dto);
     }
 
@@ -45,8 +44,8 @@ public class CompanyController {
     }
 
     @DeleteMapping("/{id}")
-    public Mono<Response> deleteCompany(ServerWebExchange exchange,
-                                        @PathVariable long id) {
+    public Mono<Response<String>> deleteCompany(ServerWebExchange exchange,
+                                                @PathVariable long id) {
         return companyService.deleteCompany(exchange, id);
     }
 
@@ -59,37 +58,37 @@ public class CompanyController {
     }
 
     @PatchMapping("/{id}/website")
-    public Mono<Response> updateWebsiteLink(ServerWebExchange exchange,
-                                            @PathVariable long id,
-                                            @RequestBody CompanyUpdateDto dto) {
+    public Mono<Response<String>> updateWebsiteLink(ServerWebExchange exchange,
+                                                    @PathVariable long id,
+                                                    @RequestBody CompanyUpdateDto dto) {
         return companyService.updateWebsite(exchange, id, dto.getParam());
     }
 
     @PatchMapping("/{id}/logo")
-    public Mono<Response> updateLogo(ServerWebExchange exchange,
-                                     @PathVariable long id,
-                                     @ModelAttribute FilePart file) {
+    public Mono<Response<String>> updateLogo(ServerWebExchange exchange,
+                                             @PathVariable long id,
+                                             @ModelAttribute FilePart file) {
         return companyService.updateLogo(exchange, id, file);
     }
 
     @PostMapping("/{id}/employees")
-    public Mono<Response> saveEmployee(ServerWebExchange exchange,
-                                       @PathVariable long id,
-                                       @RequestBody EmployeeSaveDto dto) {
+    public Mono<Response<String>> saveEmployee(ServerWebExchange exchange,
+                                     @PathVariable long id,
+                                     @RequestBody EmployeeSaveDto dto) {
         return employeeService.saveEmployee(exchange, id, dto);
     }
 
     @DeleteMapping("/{id}/employees/{userId}")
-    public Mono<Response> deleteEmployee(ServerWebExchange exchange,
-                                         @PathVariable long id,
-                                         @PathVariable long userId) {
+    public Mono<Response<String>> deleteEmployee(ServerWebExchange exchange,
+                                                 @PathVariable long id,
+                                                 @PathVariable long userId) {
         return employeeService.deleteEmployee(exchange, id, userId);
     }
 
     @PatchMapping("/{id}/employees")
-    public Mono<Response> updateEmployeeRole(ServerWebExchange exchange,
-                                             @PathVariable long id,
-                                             @RequestBody EmployeeSaveDto dto) {
+    public Mono<Response<String>> updateEmployeeRole(ServerWebExchange exchange,
+                                                     @PathVariable long id,
+                                                     @RequestBody EmployeeSaveDto dto) {
         return employeeService.updateEmployeeRole(exchange, id, dto);
     }
 
@@ -103,9 +102,9 @@ public class CompanyController {
     }
 
     @PostMapping("/{id}/vacancy")
-    public Mono<Response> saveVacancy(ServerWebExchange exchange,
-                                      @PathVariable long id,
-                                      @RequestBody VacancySaveDto dto) {
+    public Mono<Response<String>> saveVacancy(ServerWebExchange exchange,
+                                              @PathVariable long id,
+                                              @RequestBody VacancySaveDto dto) {
         return vacancyService.saveVacancy(exchange, id, dto);
     }
 
@@ -119,22 +118,9 @@ public class CompanyController {
     }
 
     @DeleteMapping("/{id}/vacancy/{vacancyId}")
-    public Mono<Response> deleteVacancy(ServerWebExchange exchange,
-                                              @PathVariable long id,
-                                              @PathVariable long vacancyId) {
+    public Mono<Response<String>> deleteVacancy(ServerWebExchange exchange,
+                                                @PathVariable long id,
+                                                @PathVariable long vacancyId) {
         return vacancyService.deleteVacancy(exchange, id, vacancyId);
-    }
-
-    @GetMapping("/vacancy/{id}")
-    public Mono<Vacancy> findVacancy(@PathVariable long id) {
-        return vacancyService.findVacancy(id);
-    }
-
-    @PostMapping("/vacancy/all")
-    public Flux<Vacancy> findVacancies(@RequestBody SearchRequest request) {
-        int page = request.getPage();
-        int size = request.getSize();
-        Pageable pageable = PageRequest.of(page, size);
-        return vacancyService.findVacanciesBy(request.getName(), pageable);
     }
 }

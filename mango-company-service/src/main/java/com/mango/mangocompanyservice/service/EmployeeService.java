@@ -5,8 +5,7 @@ import com.mango.mangocompanyservice.dto.employee.EmployeeInfoDto;
 import com.mango.mangocompanyservice.dto.employee.EmployeeSaveDto;
 import com.mango.mangocompanyservice.entity.Employee;
 import com.mango.mangocompanyservice.entity.User;
-import com.mango.mangocompanyservice.exception.CompanyNotFoundException;
-import com.mango.mangocompanyservice.exception.UserNotFoundException;
+import com.mango.mangocompanyservice.exception.*;
 import com.mango.mangocompanyservice.repository.CompanyRepository;
 import com.mango.mangocompanyservice.repository.EmployeeRepository;
 import com.mango.mangocompanyservice.repository.UserRepository;
@@ -19,6 +18,8 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.function.Function;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -28,9 +29,9 @@ public class EmployeeService {
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
 
-    public Mono<Response> saveEmployee(ServerWebExchange exchange,
-                                       long companyId,
-                                       EmployeeSaveDto dto) {
+    public Mono<Response<String>> saveEmployee(ServerWebExchange exchange,
+                                               long companyId,
+                                               EmployeeSaveDto dto) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> companyRepository.findById(companyId)
                         .flatMap(company -> {
@@ -38,25 +39,18 @@ public class EmployeeService {
                                 return permissionDeniedError();
                             }
 
-                            return userRepository.findById(dto.getUserId())
-                                    .switchIfEmpty(Mono.error(new UserNotFoundException("User not found.")))
-                                    .flatMap(existingUser -> {
-                                        Employee employee = buildEmployee(companyId, dto, existingUser);
-                                        return employeeRepository.save(employee)
-                                                .thenReturn(Response.builder()
-                                                        .message("Employee saved successfully.")
-                                                        .status(HttpStatus.OK)
-                                                        .build());
-                                    });
+                            return employeeRepository.findByCompanyIdAndEmail(companyId, dto.getEmail())
+                                    .flatMap(e -> userAlreadyInCompany())
+                                    .switchIfEmpty(userPreprocessing(companyId, dto));
                         })
                         .switchIfEmpty(Mono.error(new CompanyNotFoundException("Company not found.")))
                 )
                 .onErrorResume(this::errorResponse);
     }
 
-    public Mono<Response> deleteEmployee(ServerWebExchange exchange,
-                                         long companyId,
-                                         long userId) {
+    public Mono<Response<String>> deleteEmployee(ServerWebExchange exchange,
+                                                 long companyId,
+                                                 long userId) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> companyRepository.findById(companyId)
                         .flatMap(company -> {
@@ -65,20 +59,21 @@ public class EmployeeService {
                             }
 
                             return userRepository.findById(userId)
-                                    .switchIfEmpty(Mono.error(new UserNotFoundException("User not found.")))
+                                    .switchIfEmpty(Mono.error(new UserNotFoundException("Employee not found.")))
                                     .flatMap(existingUser -> employeeRepository.deleteByUserId(userId)
-                                            .thenReturn(Response.builder()
+                                            .thenReturn(Response.<String>builder()
+                                                    .code(HttpStatus.NO_CONTENT.value())
                                                     .message("Employee deleted successfully.")
-                                                    .status(HttpStatus.OK)
+                                                    .body("Employee deleted successfully.")
                                                     .build()));
                         })
                         .switchIfEmpty(Mono.error(new CompanyNotFoundException("Company not found."))))
                 .onErrorResume(this::errorResponse);
     }
 
-    public Mono<Response> updateEmployeeRole(ServerWebExchange exchange,
-                                             long companyId,
-                                             EmployeeSaveDto dto) {
+    public Mono<Response<String>> updateEmployeeRole(ServerWebExchange exchange,
+                                                     long companyId,
+                                                     EmployeeSaveDto dto) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> companyRepository.findById(companyId)
                         .flatMap(company -> {
@@ -86,13 +81,9 @@ public class EmployeeService {
                                 return permissionDeniedError();
                             }
 
-                            return userRepository.findById(dto.getUserId())
+                            return userRepository.findByEmail(dto.getEmail())
                                     .switchIfEmpty(Mono.error(new UserNotFoundException("User not found.")))
-                                    .flatMap(existingUser -> employeeRepository.updateEmployeeRole(companyId, dto.getUserId(), dto.getRole())
-                                            .thenReturn(Response.builder()
-                                                    .message("Employee updated successfully.")
-                                                    .status(HttpStatus.OK)
-                                                    .build()));
+                                    .flatMap(updateExistingUser(companyId, dto));
                         })
                         .switchIfEmpty(Mono.error(new CompanyNotFoundException("Company not found."))))
                 .onErrorResume(this::errorResponse);
@@ -101,27 +92,59 @@ public class EmployeeService {
     public Flux<EmployeeInfoDto> findCompanyEmployees(long id, Pageable pageable) {
         return companyRepository.findById(id)
                 .flatMapMany(company -> employeeRepository.findAllBy(id, pageable))
-                .switchIfEmpty(Mono.error(new CompanyNotFoundException("Company not found.")));
+                .switchIfEmpty(Flux.empty());
     }
 
-    private Mono<Response> permissionDeniedError() {
+    private Mono<Response<String>> userPreprocessing(long companyId, EmployeeSaveDto dto) {
+        return userRepository.findByEmail(dto.getEmail())
+                .switchIfEmpty(Mono.error(new UserNotFoundException("User not found.")))
+                .flatMap(existingUser -> {
+                    Employee employee = buildEmployee(companyId, dto, existingUser);
+                    return employeeRepository.save(employee)
+                            .thenReturn(Response.<String>builder()
+                                    .code(HttpStatus.OK.value())
+                                    .message("Employee saved successfully.")
+                                    .body(employee.getRole())
+                                    .build());
+                });
+    }
+
+    private Function<User, Mono<? extends Response<String>>> updateExistingUser(long companyId, EmployeeSaveDto dto) {
+        return existingUser -> employeeRepository.updateEmployeeRole(companyId, existingUser.getId(), dto.getRole())
+                .thenReturn(Response.<String>builder()
+                        .code(HttpStatus.OK.value())
+                        .message("Employee updated successfully.")
+                        .body("Employee updated successfully.")
+                        .build());
+    }
+
+    private static Mono<Response<String>> userAlreadyInCompany() {
+        return Mono.just(Response.<String>builder()
+                .code(HttpStatus.BAD_REQUEST.value())
+                .message("User is already in the company.")
+                .body("User is already in the company.")
+                .build());
+    }
+
+    private Mono<Response<String>> permissionDeniedError() {
         log.error("You have no permissions.");
-        return Mono.error(new RuntimeException("You have no permissions."));
+        return Mono.error(new AccessForbiddenException("You have no permissions."));
     }
 
-    private Mono<Response> errorResponse(Throwable e) {
+    private Mono<Response<String>> errorResponse(Throwable e) {
         log.error("Something went wrong: {}", e.getMessage());
-        return Mono.error(new RuntimeException(e.getMessage()));
+        return Mono.error(new BadRequestException(e.getMessage()));
     }
 
     private Employee buildEmployee(long companyId, EmployeeSaveDto dto, User user) {
         return Employee.builder()
                 .companyId(companyId)
-                .userId(dto.getUserId())
+                .userId(user.getId())
                 .role(dto.getRole())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .avatar(user.getAvatar())
+                .email(dto.getEmail())
                 .build();
     }
 }

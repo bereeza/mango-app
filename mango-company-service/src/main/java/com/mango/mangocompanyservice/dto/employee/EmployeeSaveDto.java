@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EmployeeSaveDto {
-    private long userId;
+    private String email;
     private String role;
 }

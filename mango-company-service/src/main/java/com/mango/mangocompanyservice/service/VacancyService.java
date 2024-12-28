@@ -1,15 +1,15 @@
 package com.mango.mangocompanyservice.service;
 
 import com.mango.mangocompanyservice.dto.Response;
-import com.mango.mangocompanyservice.dto.vacancy.VacancyInfoDto;
-import com.mango.mangocompanyservice.dto.vacancy.VacancySaveDto;
+import com.mango.mangocompanyservice.dto.user.UserInfoDto;
+import com.mango.mangocompanyservice.dto.vacancy.*;
+import com.mango.mangocompanyservice.entity.Applicant;
 import com.mango.mangocompanyservice.entity.Vacancy;
-import com.mango.mangocompanyservice.exception.CompanyNotFoundException;
-import com.mango.mangocompanyservice.exception.NotEmployeeException;
-import com.mango.mangocompanyservice.exception.UserNotFoundException;
-import com.mango.mangocompanyservice.exception.VacancyNotFoundException;
+import com.mango.mangocompanyservice.exception.*;
 import com.mango.mangocompanyservice.repository.CompanyRepository;
+import com.mango.mangocompanyservice.repository.VacancyApplicantRepository;
 import com.mango.mangocompanyservice.repository.VacancyRepository;
+import com.mango.mangocompanyservice.repository.VacancyStatisticRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -27,66 +27,65 @@ import java.time.LocalDateTime;
 public class VacancyService {
     private final UserRedisService userRedisService;
     private final VacancyRepository vacancyRepository;
+    private final VacancyStatisticRepository statisticRepository;
+    private final VacancyApplicantRepository applicantRepository;
     private final CompanyRepository companyRepository;
 
-    public Mono<Response> saveVacancy(ServerWebExchange exchange,
-                                      long id,
-                                      VacancySaveDto dto) {
+    public Mono<Response<String>> saveVacancy(ServerWebExchange exchange,
+                                              long id,
+                                              VacancySaveDto dto) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> companyRepository.findById(id)
                         .flatMap(company -> vacancyRepository.isUserEmployeeOfCompany(user.getId(), company.getId())
                                 .flatMap(employee -> {
-                                    if (!employee) {
+                                    if (company.getCeoId() != user.getId() && !employee) {
                                         log.error("The user is not a member of the company.");
-                                        return Mono.error(new NotEmployeeException("The user is not a member of the company."));
+                                        return Mono.error(new AccessForbiddenException("The user is not a member of the company."));
                                     }
 
                                     Vacancy vacancy = buildVacancy(user.getId(), company.getId(), dto);
                                     return vacancyRepository.save(vacancy)
-                                            .then(Mono.just(Response.builder()
+                                            .then(Mono.just(Response.<String>builder()
+                                                    .code(HttpStatus.OK.value())
                                                     .message("Vacancy successfully saved.")
-                                                    .status(HttpStatus.CREATED)
+                                                    .body("Vacancy successfully saved.")
                                                     .build()));
                                 }))
                         .switchIfEmpty(Mono.error(new CompanyNotFoundException("Company not found."))))
-                .onErrorResume(UserNotFoundException.class, this::errorResponse);
+                .onErrorResume(this::errorResponse);
     }
 
     public Flux<VacancyInfoDto> findCompanyVacancies(long id, Pageable pageable) {
         return companyRepository.findById(id)
                 .flatMapMany(vacancy -> vacancyRepository.findAllBy(id, pageable))
-                .onErrorResume(CompanyNotFoundException.class, e -> Flux.empty());
+                .switchIfEmpty(Flux.empty());
     }
 
-    public Mono<Response> deleteVacancy(ServerWebExchange exchange,
-                                        long id,
-                                        long vacancyId) {
+    public Mono<Response<String>> deleteVacancy(ServerWebExchange exchange,
+                                                long id,
+                                                long vacancyId) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> companyRepository.findById(id)
-                        .flatMap(company -> {
-                            if (company.getCeoId() == user.getId()) {
-                                log.info("Vacancy successfully deleted by CEO");
-                                return deleteVacancyById(vacancyId);
-                            }
+                        .flatMap(company -> vacancyRepository.findById(vacancyId)
+                                .switchIfEmpty(Mono.error(new VacancyNotFoundException("Vacancy not found.")))
+                                .flatMap(vacancy -> {
+                                    if (user.getId() == company.getCeoId() || vacancy.getUserId() == user.getId()) {
+                                        log.info("Vacancy successfully deleted by author");
+                                        return deleteVacancyById(vacancyId);
+                                    }
 
-                            return vacancyRepository.findById(vacancyId)
-                                    .flatMap(vacancy -> {
-                                        if (vacancy.getUserId() == user.getId()) {
-                                            log.info("Vacancy successfully deleted by author");
-                                            return deleteVacancyById(vacancyId);
-                                        }
-
-                                        return Mono.error(new NotEmployeeException("You don't have permission."));
-                                    })
-                                    .switchIfEmpty(Mono.error(new VacancyNotFoundException("Vacancy not found.")));
-                        })
+                                    return Mono.error(new AccessForbiddenException("You don't have permission."));
+                                }))
                         .switchIfEmpty(Mono.error(new CompanyNotFoundException("Company not found."))))
-                .onErrorResume(UserNotFoundException.class, this::errorResponse);
+                .onErrorResume(this::errorResponse);
     }
 
     public Mono<Vacancy> findVacancy(long id) {
         return vacancyRepository.findById(id)
-                .switchIfEmpty(Mono.error(new VacancyNotFoundException("Vacancy not found.")));
+                .switchIfEmpty(Mono.error(new VacancyNotFoundException("Vacancy not found.")))
+                .flatMap(vacancy -> applicantRepository.incrementViews(id)
+                        .thenReturn(vacancy)
+                );
     }
 
     public Flux<Vacancy> findVacanciesBy(String title, Pageable pageable) {
@@ -94,18 +93,81 @@ public class VacancyService {
                 .switchIfEmpty(Flux.empty());
     }
 
-    private Mono<Response> deleteVacancyById(long vacancyId) {
+    public Mono<Response<String>> applyVacancy(ServerWebExchange exchange,
+                                               long id,
+                                               VacancyApplyDto dto) {
+        return userRedisService.buildUser(exchange)
+                .flatMap(user -> vacancyRepository.findById(id)
+                        .flatMap(vacancy -> applicantRepository.existsByUserIdAndVacancyId(user.getId(), id)
+                                .flatMap(alreadyApplied -> {
+                                    if (alreadyApplied) {
+                                        return Mono.error(new BadRequestException("User has already applied."));
+                                    }
+
+                                    Applicant applicant = buildApplicant(id, user, dto);
+                                    return applicantRepository.save(applicant)
+                                            .then(applicantRepository.incrementApplicants(id))
+                                            .then(Mono.just(Response.<String>builder()
+                                                    .code(HttpStatus.OK.value())
+                                                    .message("User successfully applied.")
+                                                    .body("User successfully applied.")
+                                                    .build()));
+                                })
+                        )
+                        .switchIfEmpty(Mono.error(new VacancyNotFoundException("Vacancy not found.")))
+                )
+                .onErrorResume(UserNotFoundException.class, this::errorResponse);
+    }
+
+
+    public Mono<VacancyStatisticDto> findStatisticByVacancyId(long id) {
+        return statisticRepository.findStatisticByVacancyId(id)
+                .switchIfEmpty(Mono.error(new VacancyNotFoundException("Vacancy not found.")));
+    }
+
+    public Flux<VacancyApplicantsDto> findVacancyApplicants(ServerWebExchange exchange, long id, Pageable pageable) {
+        return userRedisService.buildUser(exchange)
+                .flatMapMany(user -> vacancyRepository.findById(id)
+                        .flatMapMany(vacancy -> {
+                            if (vacancy.getUserId() != user.getId()) {
+                                return Flux.error(new AccessForbiddenException("You do not have permission to view applicants for this vacancy."));
+                            }
+
+                            return applicantRepository.findAllApplicantsByVacancyId(id, pageable);
+                        })
+                        .switchIfEmpty(Flux.error(new VacancyNotFoundException("Vacancy not found.")))
+                )
+                .onErrorResume(e -> Flux.error(new BadRequestException(e.getMessage())));
+    }
+
+    private Applicant buildApplicant(long id, UserInfoDto user, VacancyApplyDto dto) {
+        return Applicant.builder()
+                .vacancyId(id)
+                .userId(user.getId())
+                .coverLetter(dto.getCoverLetter())
+                .userCv(user.getCv())
+                .applicationDate(LocalDateTime.now())
+                .build();
+    }
+
+    private Mono<Response<String>> deleteVacancyById(long vacancyId) {
         return vacancyRepository.deleteById(vacancyId)
-                .then(Mono.just(Response.builder()
+                .then(Mono.just(Response.<String>builder()
+                        .code(HttpStatus.NO_CONTENT.value())
                         .message("Vacancy successfully deleted.")
-                        .status(HttpStatus.NO_CONTENT)
+                        .body("Vacancy successfully deleted.")
                         .build()));
+    }
+
+    private Mono<Response<String>> errorResponse(Throwable e) {
+        log.error("Something went wrong: {}", e.getMessage());
+        return Mono.error(new BadRequestException(e.getMessage()));
     }
 
     private Vacancy buildVacancy(long userId, long companyId, VacancySaveDto dto) {
         return Vacancy.builder()
                 .userId(userId)
-                .isAnonymous(dto.isAnonymous())
+                .isAnonymous(dto.getIsAnonymous())
                 .companyId(companyId)
                 .title(dto.getTitle())
                 .description(dto.getDescription())
@@ -114,10 +176,5 @@ public class VacancyService {
                 .salary(dto.getSalary())
                 .createdAt(LocalDateTime.now())
                 .build();
-    }
-
-    private Mono<Response> errorResponse(Throwable e) {
-        log.error("Something went wrong: {}", e.getMessage());
-        return Mono.error(new RuntimeException(e.getMessage()));
     }
 }

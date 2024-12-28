@@ -3,6 +3,7 @@ package com.mango.mangocompanyservice.service;
 import com.mango.mangocompanyservice.dto.user.UserInfoDto;
 import com.mango.mangocompanyservice.dto.user.UserRedisInfo;
 import com.mango.mangocompanyservice.entity.User;
+import com.mango.mangocompanyservice.exception.UnauthorizedUserException;
 import com.mango.mangocompanyservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,18 +25,15 @@ public class UserRedisService {
                 .flatMap(user -> userRepository.findById(user.getId())
                         .map(this::buildUserInfo))
                 .onErrorResume(e -> {
-                    log.error("User building error: {}", e.getMessage());
-                    return Mono.empty();
+                    log.error("Error getting current user from Redis: {}", e.getMessage());
+                    return Mono.error(new UnauthorizedUserException("Error getting current user from Redis."));
                 });
     }
 
     private Mono<UserRedisInfo> getUserInfoFromRedis(ServerWebExchange exchange) {
         return tokenService.extractToken(exchange)
                 .flatMap(token -> redisTemplate.opsForValue().get(token))
-                .onErrorResume(e -> {
-                    log.error("Error getting current user from Redis: {}", e.getMessage());
-                    return Mono.empty();
-                });
+                .switchIfEmpty(Mono.error(new UnauthorizedUserException("Error getting current user from Redis.")));
     }
 
     private UserInfoDto buildUserInfo(User user) {
@@ -44,7 +42,8 @@ public class UserRedisService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .avatar(user.getAvatar())
-                .reputation(user.getReputation())
+                .email(user.getEmail())
+                .cv(user.getCv())
                 .build();
     }
 }

@@ -3,23 +3,23 @@ package com.mango.mangocompanyservice.entity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public enum Type {
-    @JsonProperty("Remote Work")
+    @JsonProperty("REMOTE")
     REMOTE,
-    @JsonProperty("In Office")
+    @JsonProperty("IN_OFFICE")
     IN_OFFICE,
-    @JsonProperty("Hybrid Work")
+    @JsonProperty("HYBRID")
     HYBRID,
-    @JsonProperty("Freelance")
+    @JsonProperty("FREELANCE")
     FREELANCE,
-    @JsonProperty("Contract Work")
+    @JsonProperty("CONTRACT")
     CONTRACT,
-    @JsonProperty("Internship")
+    @JsonProperty("INTERNSHIP")
     INTERNSHIP,
-    @JsonProperty("Part-Time Work")
+    @JsonProperty("PART_TIME")
     PART_TIME,
-    @JsonProperty("Full-Time Work")
+    @JsonProperty("FULL_TIME")
     FULL_TIME,
-    @JsonProperty("Temporary Work")
+    @JsonProperty("TEMPORARY")
     TEMPORARY
 }
 

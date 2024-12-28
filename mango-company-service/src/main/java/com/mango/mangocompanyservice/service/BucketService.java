@@ -12,9 +12,8 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -30,17 +29,19 @@ public class BucketService {
     @Value("${gcp.bucket.dir}")
     private String bucketDir;
 
+    private static final String CONTENT_TYPE = "image/*";
+
     @SneakyThrows
-    public String save(FilePart file) {
+    public Mono<String> save(FilePart file) {
         String fileName = bucketDir + "/" + UUID.randomUUID() + "-" + file.filename();
         BlobId blobId = BlobId.of(bucketName, fileName);
 
-        byte[] fileBytes = extractFileBytes(file);
-        String contentType = Objects.requireNonNull(file.headers().getContentType()).toString();
-        BlobInfo blobInfo = createBlobInfo(blobId, contentType);
-        Blob blob = storage.create(blobInfo, fileBytes);
-
-        return blob.getName();
+        return extractFileBytes(file)
+                .flatMap(fileBytes -> {
+                    BlobInfo blobInfo = createBlobInfo(blobId);
+                    Blob blob = storage.create(blobInfo, fileBytes);
+                    return Mono.just(blob.getName());
+                });
     }
 
     @SneakyThrows
@@ -49,30 +50,28 @@ public class BucketService {
         storage.delete(id);
     }
 
-    private byte[] extractFileBytes(FilePart file) {
-        List<DataBuffer> dataBuffers = file.content().collectList().block();
+    private Mono<byte[]> extractFileBytes(FilePart file) {
+        return file.content()
+                .collectList()
+                .map(dataBuffers -> {
+                    int totalSize = dataBuffers.stream().mapToInt(DataBuffer::readableByteCount).sum();
+                    byte[] byteArray = new byte[totalSize];
+                    int offset = 0;
 
-        if (dataBuffers == null || dataBuffers.isEmpty()) {
-            throw new IllegalArgumentException("File content is empty.");
-        }
+                    for (DataBuffer buffer : dataBuffers) {
+                        int bufferSize = buffer.readableByteCount();
+                        buffer.read(byteArray, offset, bufferSize);
+                        offset += bufferSize;
+                        DataBufferUtils.release(buffer);
+                    }
 
-        int size = dataBuffers.stream().mapToInt(DataBuffer::readableByteCount).sum();
-        byte[] byteArray = new byte[size];
-        int offset = 0;
-
-        for (DataBuffer buffer : dataBuffers) {
-            int bufferSize = buffer.readableByteCount();
-            buffer.read(byteArray, offset, bufferSize);
-            offset += bufferSize;
-            DataBufferUtils.release(buffer);
-        }
-
-        return byteArray;
+                    return byteArray;
+                });
     }
 
-    private BlobInfo createBlobInfo(BlobId blobId, String contentType) {
+    private BlobInfo createBlobInfo(BlobId blobId) {
         return BlobInfo.newBuilder(blobId)
-                .setContentType(contentType)
+                .setContentType(CONTENT_TYPE)
                 .build();
     }
 }
