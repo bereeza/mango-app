@@ -1,5 +1,6 @@
 package com.mango.mangocompanyservice.repository;
 
+import com.mango.mangocompanyservice.dto.user.UserInfoDto;
 import com.mango.mangocompanyservice.dto.vacancy.VacancyApplicantsDto;
 import com.mango.mangocompanyservice.entity.Applicant;
 import org.springframework.data.domain.Pageable;

@@ -18,8 +18,6 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.function.Function;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -34,15 +32,18 @@ public class EmployeeService {
                                                EmployeeSaveDto dto) {
         return userRedisService.buildUser(exchange)
                 .flatMap(user -> companyRepository.findById(companyId)
-                        .flatMap(company -> {
-                            if (user.getId() != company.getCeoId()) {
-                                return permissionDeniedError();
-                            }
+                        .flatMap(company -> employeeRepository.existsByCompanyIdAndEmail(companyId, dto.getEmail())
+                                .flatMap(alreadyEmployee -> {
+                                    if (user.getId() != company.getCeoId()) {
+                                        return permissionDeniedError();
+                                    }
 
-                            return employeeRepository.findByCompanyIdAndEmail(companyId, dto.getEmail())
-                                    .flatMap(e -> userAlreadyInCompany())
-                                    .switchIfEmpty(userPreprocessing(companyId, dto));
-                        })
+                                    if (alreadyEmployee) {
+                                        return Mono.error(new BadRequestException("User is already an employee."));
+                                    }
+
+                                    return userPreprocessing(companyId, dto);
+                                }))
                         .switchIfEmpty(Mono.error(new CompanyNotFoundException("Company not found.")))
                 )
                 .onErrorResume(this::errorResponse);
@@ -82,8 +83,12 @@ public class EmployeeService {
                             }
 
                             return userRepository.findByEmail(dto.getEmail())
-                                    .switchIfEmpty(Mono.error(new UserNotFoundException("User not found.")))
-                                    .flatMap(updateExistingUser(companyId, dto));
+                                    .flatMap(existingUser -> employeeRepository.updateEmployeeRole(companyId, existingUser.getId(), dto.getRole())
+                                            .thenReturn(Response.<String>builder()
+                                                    .code(HttpStatus.OK.value())
+                                                    .message("Employee updated successfully.")
+                                                    .body("Employee updated successfully.")
+                                                    .build()));
                         })
                         .switchIfEmpty(Mono.error(new CompanyNotFoundException("Company not found."))))
                 .onErrorResume(this::errorResponse);
@@ -107,23 +112,6 @@ public class EmployeeService {
                                     .body(employee.getRole())
                                     .build());
                 });
-    }
-
-    private Function<User, Mono<? extends Response<String>>> updateExistingUser(long companyId, EmployeeSaveDto dto) {
-        return existingUser -> employeeRepository.updateEmployeeRole(companyId, existingUser.getId(), dto.getRole())
-                .thenReturn(Response.<String>builder()
-                        .code(HttpStatus.OK.value())
-                        .message("Employee updated successfully.")
-                        .body("Employee updated successfully.")
-                        .build());
-    }
-
-    private static Mono<Response<String>> userAlreadyInCompany() {
-        return Mono.just(Response.<String>builder()
-                .code(HttpStatus.BAD_REQUEST.value())
-                .message("User is already in the company.")
-                .body("User is already in the company.")
-                .build());
     }
 
     private Mono<Response<String>> permissionDeniedError() {
